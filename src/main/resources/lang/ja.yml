@@ -14,6 +14,7 @@ command:
   help_cancel: "- 出品をキャンセル"
   help_search: "- アイテムを検索"
   help_mail: "- メールボックスを開く"
+  help_confirm: "- キャンセルや即決を確認実行"
   help_help: "- このヘルプを表示"
 
 # Auction System (オークションシステム)
@@ -36,6 +37,8 @@ auction:
   not_your_auction: "これはあなたの出品ではありません！"
   auction_cancelled: "オークションをキャンセルしました！アイテムをメールボックスに送信しました。"
   auction_has_bids: "入札があるオークションはキャンセルできません！"
+  cancel_cancelled: "キャンセルが中止されました。"
+  auction_cancelled_notification: "あなたが入札していたオークションがキャンセルされました。入札額が返金されました。"
   buyout_success: "即決購入が完了しました！アイテムをインベントリに送信しました。"
   inventory_full: "インベントリがいっぱいです！アイテムをメールボックスに送信しました。"
 
@@ -80,8 +83,11 @@ ui:
   time_left: "残り時間: {0}"
   expired: "期限切れ"
   click_to_bid: "左クリックで入札"
-  click_to_buyout: "右クリックで即決"
-  click_to_cancel: "クリックしてキャンセル"
+  click_to_buyout: "右クリックで即決（'/ah confirm'で確定）"
+  click_to_cancel: "クリックしてキャンセル（'/ah confirm'で確定）"
+  confirm_cancel: "本当にこのオークションをキャンセルしますか？"
+  type_confirm_cancel: "'/ah confirm' コマンドでキャンセルを実行してください。"
+  cancel_warning: "入札があるアイテムはキャンセルできません！"
   your_bid: "あなたの入札: {0}"
   winning: "落札中！"
   losing: "負けています"
@@ -120,7 +126,7 @@ category:
   misc: "その他"
   decorations: "装飾"
   redstone: "レッドストーン"
-  transportation: "交通"
+  transportation: "輸送"
   brewing: "醸造"
 
 # General (一般)
@@ -135,3 +141,4 @@ general:
   permission_denied: "この操作を行う権限がありません！"
   feature_disabled: "この機能は現在無効になっています！"
   unknown_error: "不明なエラーが発生しました！"
+  no_pending_confirmation: "実行待ちの確認はありません。"

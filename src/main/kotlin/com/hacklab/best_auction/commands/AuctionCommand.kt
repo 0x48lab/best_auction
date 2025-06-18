@@ -102,6 +102,10 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
                 LanguageSettingsUI.openLanguageSettings(sender, plugin)
             }
             
+            "confirm" -> {
+                plugin.bidHandler.handleConfirmCommand(sender)
+            }
+            
             "help" -> {
                 sendHelpMessage(sender, label)
             }
@@ -116,7 +120,7 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
 
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
         if (args.size == 1) {
-            return listOf("sell", "bid", "cancel", "search", "mail", "language", "help")
+            return listOf("sell", "bid", "cancel", "search", "mail", "language", "confirm", "help")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
         return emptyList()
@@ -130,6 +134,7 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
         player.sendMessage("§e/$label cancel <id> §7${plugin.langManager.getMessage(player, "command.help_cancel")}")
         player.sendMessage("§e/$label search <name> §7${plugin.langManager.getMessage(player, "command.help_search")}")
         player.sendMessage("§e/$label mail §7${plugin.langManager.getMessage(player, "command.help_mail")}")
+        player.sendMessage("§e/$label confirm §7${plugin.langManager.getMessage(player, "command.help_confirm")}")
         player.sendMessage("§e/$label language §7- Change language settings")
         player.sendMessage("§e/$label help §7${plugin.langManager.getMessage(player, "command.help_help")}")
     }

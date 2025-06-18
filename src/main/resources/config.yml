@@ -2,7 +2,7 @@
 
 # Language Settings
 # Available languages: en, ja
-language: "en"
+language: "ja"
 
 # Database Settings
 database:

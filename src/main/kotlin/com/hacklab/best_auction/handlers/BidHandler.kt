@@ -1,6 +1,7 @@
 package com.hacklab.best_auction.handlers
 
 import com.hacklab.best_auction.Main
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -30,6 +31,38 @@ class BidHandler(private val plugin: Main) : Listener {
         activeCancellations[player.uniqueId] = CancellationSession(auctionId)
     }
     
+    fun handleConfirmCommand(sender: CommandSender) {
+        if (sender !is Player) {
+            sender.sendMessage("§cThis command can only be used by players!")
+            return
+        }
+        
+        val player = sender
+        plugin.logger.info("Confirm command received from ${player.name}")
+        
+        when {
+            activeCancellations.containsKey(player.uniqueId) -> {
+                val session = activeCancellations.remove(player.uniqueId)!!
+                plugin.logger.info("Processing cancellation confirmation for ${player.name}, auctionId: ${session.auctionId}")
+                plugin.server.scheduler.runTask(plugin, Runnable {
+                    val result = plugin.auctionManager.cancelAuction(player, session.auctionId)
+                    plugin.logger.info("cancelAuction result for ${player.name}: $result")
+                })
+            }
+            activeBuyouts.containsKey(player.uniqueId) -> {
+                val session = activeBuyouts.remove(player.uniqueId)!!
+                plugin.logger.info("Processing buyout confirmation for ${player.name}, itemId: ${session.itemId}")
+                plugin.server.scheduler.runTask(plugin, Runnable {
+                    plugin.auctionManager.placeBid(player, session.itemId, session.buyoutPrice)
+                })
+            }
+            else -> {
+                plugin.logger.info("No pending confirmation for ${player.name}")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "general.no_pending_confirmation")}")
+            }
+        }
+    }
+    
     @EventHandler
     fun onPlayerChat(event: AsyncPlayerChatEvent) {
         val player = event.player
@@ -38,13 +71,8 @@ class BidHandler(private val plugin: Main) : Listener {
         if (activeBids.containsKey(player.uniqueId)) {
             event.isCancelled = true
             handleBidInput(player, message)
-        } else if (activeBuyouts.containsKey(player.uniqueId)) {
-            event.isCancelled = true
-            handleBuyoutInput(player, message)
-        } else if (activeCancellations.containsKey(player.uniqueId)) {
-            event.isCancelled = true
-            handleCancellationInput(player, message)
         }
+        // buyoutとキャンセル処理はコマンドに移行したので削除
     }
     
     private fun handleBidInput(player: Player, input: String) {
@@ -66,27 +94,5 @@ class BidHandler(private val plugin: Main) : Listener {
         })
     }
     
-    private fun handleBuyoutInput(player: Player, input: String) {
-        val session = activeBuyouts.remove(player.uniqueId) ?: return
-        
-        if (input.equals("confirm", ignoreCase = true)) {
-            plugin.server.scheduler.runTask(plugin, Runnable {
-                plugin.auctionManager.placeBid(player, session.itemId, session.buyoutPrice)
-            })
-        } else {
-            player.sendMessage("§cBuyout cancelled.")
-        }
-    }
     
-    private fun handleCancellationInput(player: Player, input: String) {
-        val session = activeCancellations.remove(player.uniqueId) ?: return
-        
-        if (input.equals("confirm", ignoreCase = true)) {
-            plugin.server.scheduler.runTask(plugin, Runnable {
-                plugin.auctionManager.cancelAuction(player, session.auctionId)
-            })
-        } else {
-            player.sendMessage(plugin.langManager.getMessage(player, "auction.cancel_cancelled"))
-        }
-    }
 }

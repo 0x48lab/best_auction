@@ -190,6 +190,7 @@ class AuctionUI : Listener {
         val auctionHouseTitle = plugin.langManager.getMessage(player, "ui.auction_house")
         val searchResultsTitle = plugin.langManager.getMessage(player, "ui.search_results")
         val yourAuctionsTitle = plugin.langManager.getMessage(player, "ui.your_auctions")
+        val mailboxTitle = plugin.langManager.getMessage(player, "ui.mailbox")
         
         // Check if it's a category page by looking for category names
         val isCategoryPage = AuctionCategory.values().any { category -> 
@@ -201,6 +202,7 @@ class AuctionUI : Listener {
                          title.startsWith(SEARCH_TITLE) ||
                          title.contains(searchResultsTitle) ||
                          title.contains(yourAuctionsTitle) ||
+                         title.contains(mailboxTitle) ||
                          title.contains("Auction") ||
                          isCategoryPage
         
@@ -216,6 +218,7 @@ class AuctionUI : Listener {
             title.startsWith(SEARCH_TITLE) -> handleCategoryClick(player, clickedItem, plugin, event.isRightClick)
             title.contains(searchResultsTitle) -> handleCategoryClick(player, clickedItem, plugin, event.isRightClick)
             title.contains(yourAuctionsTitle) -> handleMyListingsClick(player, clickedItem, plugin)
+            title.contains(mailboxTitle) -> handleMailBoxClick(player, clickedItem, plugin)
             isCategoryPage -> handleCategoryClick(player, clickedItem, plugin, event.isRightClick)
         }
     }
@@ -265,6 +268,7 @@ class AuctionUI : Listener {
         if (seller == player.name) {
             // This is the player's own item - allow cancellation
             player.closeInventory()
+            plugin.logger.info("Starting cancellation for player ${player.name}, auctionId: $auctionId")
             player.sendMessage("§c${plugin.langManager.getMessage(player, "ui.confirm_cancel")}")
             player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.type_confirm_cancel")}")
             
@@ -283,7 +287,7 @@ class AuctionUI : Listener {
         
         if (isRightClick && buyoutPrice != null) {
             player.sendMessage("§eBuyout price: ${ItemUtils.formatPrice(buyoutPrice)} gil")
-            player.sendMessage("§eType 'confirm' to purchase or 'cancel' to abort:")
+            player.sendMessage("§e'/ah confirm' コマンドで購入を実行してください。")
             plugin.bidHandler.startBuyout(player, auctionId, buyoutPrice)
             plugin.logger.info("Started buyout session for player ${player.name}, itemId: $auctionId, price: $buyoutPrice")
         } else {
@@ -322,18 +326,37 @@ class AuctionUI : Listener {
         val meta = clickedItem.itemMeta ?: return
         val lore = meta.lore ?: return
         
-        val sellerLine = lore.find { it.startsWith("§7Seller:") } ?: return
-        val seller = sellerLine.replace("§7Seller: §f", "")
+        // Extract auction ID from lore
+        val auctionId = findAuctionItemId(lore)
         
-        if (seller == player.name) {
-            player.closeInventory()
-            player.sendMessage("§eRight-click to cancel this listing")
-            player.sendMessage("§7Warning: You can only cancel listings with no bids!")
+        // Check if it's the player's own listing (from seller line)
+        val sellerLine = lore.find { it.startsWith("§7${plugin.langManager.getMessage(player, "ui.seller")}:") }
+        if (sellerLine != null) {
+            val seller = sellerLine.replace("§7${plugin.langManager.getMessage(player, "ui.seller")}: §f", "")
+            
+            if (seller == player.name) {
+                // This is the player's own item - allow cancellation
+                player.closeInventory()
+                plugin.logger.info("Starting cancellation from My Listings for player ${player.name}, auctionId: $auctionId")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "ui.confirm_cancel")}")
+                player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.type_confirm_cancel")}")
+                
+                // Start cancellation confirmation
+                plugin.bidHandler.startCancellation(player, auctionId)
+                return
+            }
         }
     }
     
     private fun extractPrice(line: String): Long {
         return line.replace(Regex("[^0-9.]"), "").replace(".", "").toLongOrNull() ?: 0L
+    }
+    
+    private fun handleMailBoxClick(player: Player, clickedItem: ItemStack, plugin: Main) {
+        if (plugin.mailManager.handleMailBoxClick(player, clickedItem)) {
+            // Back button was clicked - return to main menu
+            openMainUI(player, plugin)
+        }
     }
     
     private fun findAuctionItemId(lore: List<String>): Int {

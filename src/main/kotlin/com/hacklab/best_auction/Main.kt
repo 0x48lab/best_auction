@@ -46,7 +46,7 @@ class Main : JavaPlugin() {
         databaseManager = DatabaseManager(dataFolder)
         databaseManager.init()
 
-        mailManager = MailManager()
+        mailManager = MailManager(this)
         auctionManager = AuctionManager(this, economy)
         bidHandler = BidHandler(this)
         searchHandler = SearchHandler(this)

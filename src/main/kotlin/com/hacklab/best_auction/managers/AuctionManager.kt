@@ -261,6 +261,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
     }
     
     fun cancelAuction(player: Player, auctionId: Int): Boolean {
+        plugin.logger.info("cancelAuction called for player ${player.name}, auctionId: $auctionId")
         return transaction {
             try {
                 // Get auction item
@@ -268,12 +269,19 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                     AuctionItems.id eq auctionId and 
                     (AuctionItems.isActive eq true) and 
                     (AuctionItems.isSold eq false)
-                }.singleOrNull() ?: return@transaction false
+                }.singleOrNull()
+                
+                if (auctionRow == null) {
+                    plugin.logger.warning("Auction item not found or inactive for auctionId: $auctionId")
+                    return@transaction false
+                }
                 
                 val sellerUuid = auctionRow[AuctionItems.sellerUuid]
+                plugin.logger.info("Found auction for cancellation: sellerUuid=$sellerUuid, playerUuid=${player.uniqueId}")
                 
                 // Check if player is the seller
                 if (sellerUuid != player.uniqueId.toString()) {
+                    plugin.logger.warning("Player ${player.name} tried to cancel auction that's not theirs")
                     player.sendMessage(plugin.langManager.getMessage(player, "auction.not_your_auction"))
                     return@transaction false
                 }
@@ -317,7 +325,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                     player.uniqueId,
                     player.name,
                     item,
-                    "オークションキャンセル - アイテム返却"
+                    plugin.langManager.getMessage(player, "mail.mail_cancelled")
                 )
                 
                 // Mark auction as inactive
@@ -329,7 +337,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 // Note: We don't delete bids here as refunds are already processed above
                 
                 player.sendMessage(plugin.langManager.getMessage(player, "auction.auction_cancelled"))
-                plugin.logger.info("Player ${player.name} cancelled auction ID: $auctionId")
+                plugin.logger.info("Successfully cancelled auction ID: $auctionId for player ${player.name}")
                 
                 true
             } catch (e: Exception) {

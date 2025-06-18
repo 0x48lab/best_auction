@@ -79,7 +79,8 @@ class LangManager(private val plugin: Main) {
                 null
             }
         } ?: run {
-            plugin.logger.warning("Missing translation key: $key")
+            plugin.logger.warning("Missing translation key: $key in language: $lang (available languages: ${languages.keys})")
+            plugin.logger.warning("Config keys for $lang: ${config?.getKeys(true)?.take(10)}")
             "§c[Missing: $key]"
         }
         

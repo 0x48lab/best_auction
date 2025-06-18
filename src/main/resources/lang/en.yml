@@ -15,6 +15,7 @@ command:
   help_search: "- Search for items"
   help_mail: "- Open mailbox"
   help_help: "- Show this help"
+  help_confirm: "- Confirm cancellation or buyout"
 
 # Auction System
 auction:
@@ -36,6 +37,8 @@ auction:
   not_your_auction: "This is not your auction!"
   auction_cancelled: "Auction cancelled! Item sent to your mailbox."
   auction_has_bids: "Cannot cancel auction with bids!"
+  cancel_cancelled: "Cancellation aborted."
+  auction_cancelled_notification: "An auction you bid on was cancelled. Your bid has been refunded."
   buyout_success: "Buyout successful! Item sent to your inventory."
   inventory_full: "Your inventory is full! Item sent to mailbox."
 
@@ -80,8 +83,11 @@ ui:
   time_left: "Time Left: {0}"
   expired: "Expired"
   click_to_bid: "Click to bid"
-  click_to_buyout: "Shift+Click to buyout"
-  click_to_cancel: "Click to cancel"
+  click_to_buyout: "Right-click to buyout (use '/ah confirm' to confirm)"
+  click_to_cancel: "Click to cancel (use '/ah confirm' to confirm)"
+  confirm_cancel: "Do you really want to cancel this auction?"
+  type_confirm_cancel: "Use '/ah confirm' command to execute cancellation."
+  cancel_warning: "Items with bids cannot be cancelled!"
   your_bid: "Your Bid: {0}"
   winning: "Winning!"
   losing: "Losing"
@@ -135,3 +141,4 @@ general:
   permission_denied: "You don't have permission to do this!"
   feature_disabled: "This feature is currently disabled!"
   unknown_error: "An unknown error occurred!"
+  no_pending_confirmation: "No pending confirmation to execute."
