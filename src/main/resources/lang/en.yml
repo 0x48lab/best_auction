@@ -57,6 +57,11 @@ auction:
   withdraw_failed: "Failed to withdraw bid amount!"
   expires_at: "Expires: {0}"
   item_sold: "Your item sold for {0} gil!"
+  max_listings_reached: "You have reached the maximum number of listings! Max listings: {0}"
+  invalid_stack_quantity: "This item can only be listed in quantities of 1 or max stack size ({0})!"
+  cannot_auction_air: "Cannot auction air!"
+  items_individual_or_full_stack: "Items must be sold individually or in full stacks only!"
+  enchanted_items_full_durability: "Enchanted items must be at full durability!"
 
 # Mail System
 mail:

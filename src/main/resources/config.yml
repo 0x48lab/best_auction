@@ -35,6 +35,15 @@ auction:
   
   # Auction house tax percentage (0.03 = 3%)
   tax_rate: 0.03
+  
+  # Stack quantity limits
+  # If true, allow any quantity to be listed
+  # If false, limit to 1 or max stack size (typically 64)
+  allow_any_stack_quantity: false
+  
+  # Player listing limits
+  # Maximum number of items a player can list simultaneously
+  max_player_listings: 7
 
 # Currency Settings
 currency:

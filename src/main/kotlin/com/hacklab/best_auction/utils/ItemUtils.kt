@@ -50,19 +50,27 @@ object ItemUtils {
         return clone
     }
     
-    fun isValidForAuction(item: ItemStack): Pair<Boolean, String> {
+    fun isValidForAuction(item: ItemStack, langManager: com.hacklab.best_auction.utils.LangManager? = null, player: org.bukkit.entity.Player? = null): Pair<Boolean, String> {
         if (item.type.isAir) {
-            return false to "Cannot auction air!"
+            val message = if (langManager != null && player != null) {
+                langManager.getMessage(player, "auction.cannot_auction_air")
+            } else {
+                "Cannot auction air!"
+            }
+            return false to message
         }
         
-        if (item.amount != 1 && item.amount != item.maxStackSize) {
-            return false to "Items must be sold individually or in full stacks only!"
-        }
+        // Note: Stack quantity validation is now handled in AuctionManager based on config
         
         val meta = item.itemMeta
         if (meta != null) {
             if (meta.hasEnchants() && item.durability > 0) {
-                return false to "Enchanted items must be at full durability!"
+                val message = if (langManager != null && player != null) {
+                    langManager.getMessage(player, "auction.enchanted_items_full_durability")
+                } else {
+                    "Enchanted items must be at full durability!"
+                }
+                return false to message
             }
         }
         

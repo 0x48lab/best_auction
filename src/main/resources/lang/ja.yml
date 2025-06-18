@@ -57,6 +57,11 @@ auction:
   withdraw_failed: "入札額の引き落としに失敗しました！"
   expires_at: "期限: {0}"
   item_sold: "あなたのアイテムが{0} gilで売れました！"
+  max_listings_reached: "出品数が上限に達しています！最大出品数: {0}"
+  invalid_stack_quantity: "このアイテムは1個または最大スタック数（{0}個）でのみ出品できます！"
+  cannot_auction_air: "空気は出品できません！"
+  items_individual_or_full_stack: "アイテムは1個または最大スタック数でのみ出品できます！"
+  enchanted_items_full_durability: "エンチャントされたアイテムは耐久値が満タンである必要があります！"
 
 # Mail System (メールシステム)
 mail:

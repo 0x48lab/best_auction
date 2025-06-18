@@ -21,10 +21,31 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
     fun listItem(player: Player, startPrice: Long, buyoutPrice: Long?): Boolean {
         val item = player.inventory.itemInMainHand
         
-        val validation = ItemUtils.isValidForAuction(item)
+        val validation = ItemUtils.isValidForAuction(item, plugin.langManager, player)
         if (!validation.first) {
             player.sendMessage("§c${validation.second}")
             return false
+        }
+        
+        // Check player listing limit
+        val maxListings = plugin.config.getInt("auction.max_player_listings", 7)
+        val currentListings = getPlayerListings(player.uniqueId).size
+        if (currentListings >= maxListings) {
+            player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.max_listings_reached", "$maxListings")}") 
+            return false
+        }
+        
+        // Check stack quantity limits
+        val allowAnyStack = plugin.config.getBoolean("auction.allow_any_stack_quantity", true)
+        if (!allowAnyStack) {
+            val itemAmount = item.amount
+            val maxStackSize = item.type.maxStackSize
+            
+            // Allow only 1 or max stack size (typically 64)
+            if (itemAmount != 1 && itemAmount != maxStackSize) {
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.invalid_stack_quantity", "$maxStackSize")}") 
+                return false
+            }
         }
         
         val isStack = item.amount == item.maxStackSize
@@ -61,11 +82,11 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                     it[AuctionItems.listingFee] = fee
                     it[AuctionItems.expiresAt] = expiresAt
                     it[AuctionItems.quantity] = item.amount
-                }
+                } get AuctionItems.id
                 
                 if (economy.withdrawPlayer(player, fee.toDouble()).transactionSuccess()) {
                     player.inventory.setItemInMainHand(null)
-                    player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.item_listed", "$auctionId")}")
+                    player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.item_listed", "${auctionId.value}")}")
                     player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.listing_fee", "${ItemUtils.formatPriceWithCurrency(fee, economy, plugin)}")}")
                     player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.expires_at", ItemUtils.formatDate(expiresAt, plugin))}")
                     true
