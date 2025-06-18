@@ -1,0 +1,12 @@
+name: best_auction
+version: '1.0-SNAPSHOT'
+main: com.hacklab.best_auction.Main
+api-version: '1.20'
+authors: [ masafumi terazono ]
+softdepend: [ Vault ]
+
+commands:
+  auction:
+    description: Main auction house command
+    usage: /auction [help|sell|bid|cancel|search|mail]
+    aliases: [ ah ]
