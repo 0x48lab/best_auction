@@ -85,10 +85,10 @@ class BidHandler(private val plugin: Main) : Listener {
         }
         
         // Parse bid amount - allow both direct numbers and formatted text
-        val bidAmount = parseAmount(input)
+        val bidAmount = ItemUtils.parseAmount(input)
         if (bidAmount == null) {
             player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.invalid_bid_format")}")
-            player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.bid_format_example")}: 1000, 1k, 1.5k")
+            player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.bid_format_example")}: 1000, 1k, 1.5k, 1m, 2.5b")
             return
         }
         
@@ -106,21 +106,6 @@ class BidHandler(private val plugin: Main) : Listener {
         })
     }
     
-    private fun parseAmount(input: String): Long? {
-        val cleanInput = input.replace(",", "").replace(" ", "").lowercase()
-        
-        return when {
-            cleanInput.endsWith("k") -> {
-                val number = cleanInput.dropLast(1).toDoubleOrNull()
-                if (number != null) (number * 1000).toLong() else null
-            }
-            cleanInput.endsWith("m") -> {
-                val number = cleanInput.dropLast(1).toDoubleOrNull()
-                if (number != null) (number * 1000000).toLong() else null
-            }
-            else -> cleanInput.toLongOrNull()
-        }
-    }
     
     
 }

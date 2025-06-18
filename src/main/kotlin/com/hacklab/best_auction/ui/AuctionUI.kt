@@ -68,12 +68,20 @@ class AuctionUI : Listener {
             inventory.setItem(47, myListingsItem)
             
             // Language settings button
+            // My bids button  
+            val myBidsItem = ItemStack(Material.GOLDEN_SWORD)
+            val myBidsMeta = myBidsItem.itemMeta!!
+            myBidsMeta.setDisplayName("§e" + plugin.langManager.getMessage(player, "ui.my_bids"))
+            myBidsMeta.lore = listOf("§7" + plugin.langManager.getMessage(player, "ui.click_to_view_bids"))
+            myBidsItem.itemMeta = myBidsMeta
+            inventory.setItem(48, myBidsItem)
+            
             val langItem = ItemStack(Material.WRITABLE_BOOK)
             val langMeta = langItem.itemMeta!!
             langMeta.setDisplayName("§e" + plugin.langManager.getMessage(player, "ui.settings"))
             langMeta.lore = listOf("§7" + plugin.langManager.getMessage(player, "ui.click_to_settings"))
             langItem.itemMeta = langMeta
-            inventory.setItem(48, langItem)
+            inventory.setItem(49, langItem)
             
             player.openInventory(inventory)
         }
@@ -174,10 +182,10 @@ class AuctionUI : Listener {
                 lore.add("§7設定名: §f${originalMeta.displayName}")
             }
             lore.add("§7${plugin.langManager.getMessage(player, "ui.seller")}: §f${auctionItem.sellerName}")
-            lore.add("§7${plugin.langManager.getMessage(player, "ui.current_bid")}: §a${ItemUtils.formatPrice(auctionItem.currentPrice)} gil")
+            lore.add("§7${plugin.langManager.getMessage(player, "ui.current_bid")}: §a${ItemUtils.formatPriceWithCurrency(auctionItem.currentPrice, plugin.getEconomy(), plugin)}")
             
             if (auctionItem.buyoutPrice != null) {
-                lore.add("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §e${ItemUtils.formatPrice(auctionItem.buyoutPrice)} gil")
+                lore.add("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.buyoutPrice, plugin.getEconomy(), plugin)}")
             }
             
             lore.add("§7数量: §f${auctionItem.quantity}")
@@ -202,6 +210,86 @@ class AuctionUI : Listener {
             return displayItem
         }
         
+        fun openMyBidsUI(player: Player, plugin: Main, page: Int = 0) {
+            val title = plugin.langManager.getMessage(player, "ui.my_bids")
+            val inventory = Bukkit.createInventory(null, 54, "§6$title")
+            val myBids = plugin.auctionManager.getPlayerBids(player.uniqueId)
+            
+            // Store session data
+            playerPages[player.name] = page
+            playerSessions[player.name] = PaginationSession(SessionType.MY_LISTINGS) // Reuse MY_LISTINGS type for pagination
+            
+            val startIndex = page * ITEMS_PER_PAGE
+            val endIndex = minOf(startIndex + ITEMS_PER_PAGE, myBids.size)
+            
+            myBids.subList(startIndex, endIndex).forEachIndexed { index, auctionItem ->
+                val displayItem = createBidDisplayItem(auctionItem, player, plugin)
+                inventory.setItem(index, displayItem)
+            }
+            
+            // Add navigation buttons
+            addNavigationButtons(inventory, plugin, player, page, myBids.size)
+            
+            player.openInventory(inventory)
+        }
+        
+        private fun createBidDisplayItem(auctionItem: AuctionItem, player: Player, plugin: Main): ItemStack {
+            val displayItem = auctionItem.itemStack.clone()
+            val originalMeta = auctionItem.itemStack.itemMeta!!
+            val meta = displayItem.itemMeta!!
+            
+            // アイテムの正式名前（Material名から生成）
+            val officialName = displayItem.type.name.replace("_", " ").lowercase()
+                .split(" ").joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
+            
+            // 表示名（元のアイテムのカスタム名があればそれを使用、なければ正式名）
+            val displayName = if (originalMeta.hasDisplayName()) {
+                originalMeta.displayName!!
+            } else {
+                officialName
+            }
+            
+            meta.setDisplayName("§6$displayName")
+            
+            val lore = mutableListOf<String>()
+            lore.add("§7アイテム正式名: §f$officialName")
+            if (originalMeta.hasDisplayName()) {
+                lore.add("§7設定名: §f${originalMeta.displayName}")
+            }
+            lore.add("§7${plugin.langManager.getMessage(player, "ui.seller")}: §f${auctionItem.sellerName}")
+            lore.add("§7${plugin.langManager.getMessage(player, "ui.current_bid")}: §a${ItemUtils.formatPriceWithCurrency(auctionItem.currentPrice, plugin.getEconomy(), plugin)}")
+            
+            // Show player's bid amount
+            if (auctionItem.playerBidAmount != null) {
+                lore.add("§7${plugin.langManager.getMessage(player, "ui.your_bid")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.playerBidAmount, plugin.getEconomy(), plugin)}")
+                
+                // Show if player is winning or losing
+                if (auctionItem.playerBidAmount == auctionItem.currentPrice) {
+                    lore.add("§a${plugin.langManager.getMessage(player, "ui.winning_bid")}")
+                } else {
+                    lore.add("§c${plugin.langManager.getMessage(player, "ui.outbid")}")
+                }
+            }
+            
+            if (auctionItem.buyoutPrice != null) {
+                lore.add("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.buyoutPrice, plugin.getEconomy(), plugin)}")
+            }
+            
+            lore.add("§7数量: §f${auctionItem.quantity}")
+            lore.add("§7期限: §f${auctionItem.expiresAt.toLocalDate()}")
+            lore.add("")
+            lore.add("§e${plugin.langManager.getMessage(player, "ui.click_to_change_bid")}")
+            lore.add("§c${plugin.langManager.getMessage(player, "ui.right_click_to_cancel_bid")}")
+            lore.add("§7${plugin.langManager.getMessage(player, "ui.cancel_bid_warning")}")
+            lore.add("")
+            lore.add("§8ID: ${auctionItem.id}")
+            
+            meta.lore = lore
+            displayItem.itemMeta = meta
+            
+            return displayItem
+        }
+
         private fun addNavigationButtons(inventory: Inventory, plugin: Main, player: Player, currentPage: Int, totalItems: Int) {
             val totalPages = (totalItems + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE
             
@@ -262,6 +350,7 @@ class AuctionUI : Listener {
         val auctionHouseTitle = plugin.langManager.getMessage(player, "ui.auction_house")
         val searchResultsTitle = plugin.langManager.getMessage(player, "ui.search_results")
         val yourAuctionsTitle = plugin.langManager.getMessage(player, "ui.your_auctions")
+        val myBidsTitle = plugin.langManager.getMessage(player, "ui.my_bids")
         val mailboxTitle = plugin.langManager.getMessage(player, "ui.mailbox")
         
         // Check if it's a category page by looking for category names
@@ -274,6 +363,7 @@ class AuctionUI : Listener {
                          title.startsWith(SEARCH_TITLE) ||
                          title.contains(searchResultsTitle) ||
                          title.contains(yourAuctionsTitle) ||
+                         title.contains(myBidsTitle) ||
                          title.contains(mailboxTitle) ||
                          title.contains("Auction") ||
                          isCategoryPage
@@ -290,6 +380,7 @@ class AuctionUI : Listener {
             title.startsWith(SEARCH_TITLE) -> handleCategoryClick(player, clickedItem, plugin, event.isRightClick)
             title.contains(searchResultsTitle) -> handleCategoryClick(player, clickedItem, plugin, event.isRightClick)
             title.contains(yourAuctionsTitle) -> handleMyListingsClick(player, clickedItem, plugin)
+            title.contains(myBidsTitle) -> handleMyBidsClick(player, clickedItem, plugin, event.isRightClick)
             title.contains(mailboxTitle) -> handleMailBoxClick(player, clickedItem, plugin)
             isCategoryPage -> handleCategoryClick(player, clickedItem, plugin, event.isRightClick)
         }
@@ -308,6 +399,9 @@ class AuctionUI : Listener {
             }
             Material.LECTERN -> {
                 openMyListingsUI(player, plugin)
+            }
+            Material.GOLDEN_SWORD -> {
+                openMyBidsUI(player, plugin)
             }
             Material.WRITABLE_BOOK -> {
                 player.closeInventory()
@@ -374,59 +468,59 @@ class AuctionUI : Listener {
         
         val auctionId = findAuctionItemId(lore)
         
-        val sellerLabel = plugin.langManager.getMessage(player, "ui.seller")
-        val sellerLine = lore.find { it.startsWith("§7$sellerLabel:") } 
-        if (sellerLine == null) {
-            plugin.logger.warning("Could not find seller line in lore for auction $auctionId")
-            player.sendMessage("§cエラー: 出品者情報が見つかりません")
+        if (auctionId <= 0) {
+            plugin.logger.warning("Invalid auction ID found: $auctionId")
+            player.sendMessage("§cエラー: オークションIDが見つかりません")
             return
         }
-        val seller = sellerLine.replace("§7$sellerLabel: §f", "")
-        
-        if (seller == player.name) {
-            // This is the player's own item - allow cancellation
-            player.closeInventory()
-            plugin.logger.info("Starting cancellation for player ${player.name}, auctionId: $auctionId")
-            player.sendMessage("§c${plugin.langManager.getMessage(player, "ui.confirm_cancel")}")
-            player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.type_confirm_cancel")}")
-            
-            // Start cancellation confirmation
-            plugin.bidHandler.startCancellation(player, auctionId)
-            return
-        }
-        
-        val currentBidLabel = plugin.langManager.getMessage(player, "ui.current_bid")
-        val buyoutPriceLabel = plugin.langManager.getMessage(player, "ui.buyout_price")
-        
-        val priceLine = lore.find { it.startsWith("§7$currentBidLabel:") } 
-        if (priceLine == null) {
-            plugin.logger.warning("Could not find current price line in lore for auction $auctionId")
-            player.sendMessage("§cエラー: 価格情報が見つかりません")
-            return
-        }
-        val currentPrice = extractPrice(priceLine, plugin)
-        
-        val buyoutLine = lore.find { it.startsWith("§7$buyoutPriceLabel:") }
-        val buyoutPrice = buyoutLine?.let { extractPrice(it, plugin) }
         
         player.closeInventory()
         
-        if (isRightClick && buyoutPrice != null) {
-            player.sendMessage("§eBuyout price: ${ItemUtils.formatPrice(buyoutPrice)} gil")
-            player.sendMessage("§e'/ah confirm' コマンドで購入を実行してください。")
-            plugin.bidHandler.startBuyout(player, auctionId, buyoutPrice)
-            plugin.logger.info("Started buyout session for player ${player.name}, itemId: $auctionId, price: $buyoutPrice")
-        } else {
-            player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-            player.sendMessage("§6${plugin.langManager.getMessage(player, "ui.bid_prompt_header")}")
-            player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_price")}: §a${ItemUtils.formatPrice(currentPrice)} gil")
-            player.sendMessage("§e${plugin.langManager.getMessage(player, "ui.enter_bid_amount")}:")
-            player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.bid_command_hint")}: §7/ah bid $auctionId <金額>")
-            player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.minimum_bid")}: §7${ItemUtils.formatPrice(currentPrice + 1)} gil")
-            player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-            plugin.bidHandler.startBid(player, auctionId, currentPrice)
-            plugin.logger.info("Started bid session for player ${player.name}, itemId: $auctionId, currentPrice: $currentPrice")
-        }
+        // Get fresh auction data from database instead of relying on lore
+        plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable {
+            val auctionInfo = plugin.auctionManager.getAuctionInfo(auctionId)
+            
+            plugin.server.scheduler.runTask(plugin, Runnable {
+                if (auctionInfo == null) {
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.item_not_found")}")
+                    return@Runnable
+                }
+                
+                // Check if this is the player's own item
+                if (auctionInfo.sellerUuid == player.uniqueId) {
+                    plugin.logger.info("Starting cancellation for player ${player.name}, auctionId: $auctionId")
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "ui.confirm_cancel")}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.type_confirm_cancel")}")
+                    plugin.bidHandler.startCancellation(player, auctionId)
+                    return@Runnable
+                }
+                
+                val currentPrice = auctionInfo.currentPrice
+                val buyoutPrice = auctionInfo.buyoutPrice
+        
+                if (isRightClick && buyoutPrice != null) {
+                    player.sendMessage("§eBuyout price: ${ItemUtils.formatPriceWithCurrency(buyoutPrice, plugin.getEconomy(), plugin)}")
+                    player.sendMessage("§e'/ah confirm' コマンドで購入を実行してください。")
+                    plugin.bidHandler.startBuyout(player, auctionId, buyoutPrice)
+                    plugin.logger.info("Started buyout session for player ${player.name}, itemId: $auctionId, price: $buyoutPrice")
+                } else {
+                    player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    player.sendMessage("§6${plugin.langManager.getMessage(player, "ui.bid_prompt_header")}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_highest_bid")}: §a${ItemUtils.formatPriceWithCurrency(currentPrice, plugin.getEconomy(), plugin)}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.minimum_bid")}: §e${ItemUtils.formatPriceWithCurrency(currentPrice + 1, plugin.getEconomy(), plugin)}")
+                    if (buyoutPrice != null) {
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §6${ItemUtils.formatPriceWithCurrency(buyoutPrice, plugin.getEconomy(), plugin)}")
+                        player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.buyout_hint")}")
+                    }
+                    player.sendMessage("")
+                    player.sendMessage("§e${plugin.langManager.getMessage(player, "ui.enter_bid_amount")}:")
+                    player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.bid_command_hint")}: §7/ah bid $auctionId <金額>")
+                    player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                    plugin.bidHandler.startBid(player, auctionId, currentPrice)
+                    plugin.logger.info("Started bid session for player ${player.name}, itemId: $auctionId, currentPrice: $currentPrice")
+                }
+            })
+        })
     }
     
     private fun openMyListingsUI(player: Player, plugin: Main, page: Int = 0) {
@@ -486,31 +580,129 @@ class AuctionUI : Listener {
         // Extract auction ID from lore
         val auctionId = findAuctionItemId(lore)
         
-        // Check if it's the player's own listing (from seller line)
-        val sellerLabel = plugin.langManager.getMessage(player, "ui.seller")
-        val sellerLine = lore.find { it.startsWith("§7$sellerLabel:") }
-        if (sellerLine != null) {
-            val seller = sellerLine.replace("§7$sellerLabel: §f", "")
+        if (auctionId <= 0) {
+            plugin.logger.warning("Invalid auction ID found in my listings: $auctionId")
+            return
+        }
+        
+        // Verify ownership through database instead of lore
+        player.closeInventory()
+        
+        plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable {
+            val auctionInfo = plugin.auctionManager.getAuctionInfo(auctionId)
             
-            if (seller == player.name) {
-                // This is the player's own item - allow cancellation
-                player.closeInventory()
-                plugin.logger.info("Starting cancellation from My Listings for player ${player.name}, auctionId: $auctionId")
-                player.sendMessage("§c${plugin.langManager.getMessage(player, "ui.confirm_cancel")}")
-                player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.type_confirm_cancel")}")
+            plugin.server.scheduler.runTask(plugin, Runnable {
+                if (auctionInfo == null) {
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.item_not_found")}")
+                    return@Runnable
+                }
                 
-                // Start cancellation confirmation
-                plugin.bidHandler.startCancellation(player, auctionId)
-                return
+                // Check if this is the player's own listing
+                if (auctionInfo.sellerUuid == player.uniqueId) {
+                    plugin.logger.info("Starting cancellation from My Listings for player ${player.name}, auctionId: $auctionId")
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "ui.confirm_cancel")}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.type_confirm_cancel")}")
+                    plugin.bidHandler.startCancellation(player, auctionId)
+                } else {
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.not_your_auction")}")
+                }
+            })
+        })
+    }
+    
+    private fun handleMyBidsClick(player: Player, clickedItem: ItemStack, plugin: Main, isRightClick: Boolean = false) {
+        if (clickedItem.type == Material.ARROW) {
+            openMainUI(player, plugin)
+            return
+        }
+        
+        // Handle pagination buttons
+        if (clickedItem.type == Material.SPECTRAL_ARROW || clickedItem.type == Material.TIPPED_ARROW) {
+            val displayName = clickedItem.itemMeta?.displayName ?: ""
+            val currentPage = playerPages[player.name] ?: 0
+            
+            when {
+                displayName.contains(plugin.langManager.getMessage(player, "ui.previous_page")) -> {
+                    openMyBidsUI(player, plugin, currentPage - 1)
+                    return
+                }
+                displayName.contains(plugin.langManager.getMessage(player, "ui.next_page")) -> {
+                    openMyBidsUI(player, plugin, currentPage + 1)
+                    return
+                }
             }
+        }
+        
+        // Handle page info button (no action)
+        if (clickedItem.type == Material.BOOK && clickedItem.itemMeta?.displayName?.contains(plugin.langManager.getMessage(player, "ui.page_indicator")) == true) {
+            return
+        }
+        
+        val meta = clickedItem.itemMeta ?: return
+        val lore = meta.lore ?: return
+        
+        // Extract auction ID from lore
+        val auctionId = findAuctionItemId(lore)
+        
+        if (auctionId <= 0) {
+            plugin.logger.warning("Invalid auction ID found in my bids click: $auctionId")
+            return
+        }
+        
+        player.closeInventory()
+        
+        if (isRightClick) {
+            // Right click - Cancel the bid
+            player.sendMessage("§e${plugin.langManager.getMessage(player, "auction.cancelling_bid")}...")
+            
+            plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable {
+                val success = plugin.auctionManager.cancelPlayerBid(player, auctionId)
+                
+                plugin.server.scheduler.runTask(plugin, Runnable {
+                    if (success) {
+                        // Refresh the my bids UI
+                        openMyBidsUI(player, plugin)
+                    } else {
+                        // If failed, just reopen the UI
+                        openMyBidsUI(player, plugin)
+                    }
+                })
+            })
+        } else {
+            // Left click - Change bid amount
+            // Get current auction info to show current price
+            plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable {
+                val auctionInfo = plugin.auctionManager.getAuctionInfo(auctionId, player.uniqueId)
+                
+                plugin.server.scheduler.runTask(plugin, Runnable {
+                    if (auctionInfo != null) {
+                        val currentPrice = auctionInfo.currentPrice
+                        val playerBidAmount = auctionInfo.playerBidAmount ?: 0L
+                        
+                        player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                        player.sendMessage("§6${plugin.langManager.getMessage(player, "ui.change_bid_header")}")
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_highest_bid")}: §a${ItemUtils.formatPriceWithCurrency(currentPrice, plugin.getEconomy(), plugin)}")
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.your_current_bid")}: §e${ItemUtils.formatPriceWithCurrency(playerBidAmount, plugin.getEconomy(), plugin)}")
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.minimum_bid")}: §e${ItemUtils.formatPriceWithCurrency(currentPrice + 1, plugin.getEconomy(), plugin)}")
+                        if (auctionInfo.buyoutPrice != null) {
+                            player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §6${ItemUtils.formatPriceWithCurrency(auctionInfo.buyoutPrice, plugin.getEconomy(), plugin)}")
+                            player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.buyout_hint")}")
+                        }
+                        player.sendMessage("")
+                        player.sendMessage("§e${plugin.langManager.getMessage(player, "ui.enter_new_bid_amount")}:")
+                        player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.bid_command_hint")}: §7/ah bid $auctionId <金額>")
+                        player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+                        
+                        plugin.bidHandler.startBid(player, auctionId, currentPrice)
+                    } else {
+                        player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.item_not_found")}")
+                        openMyBidsUI(player, plugin)
+                    }
+                })
+            })
         }
     }
     
-    private fun extractPrice(line: String, plugin: Main): Long {
-        val extracted = line.replace(Regex("[^0-9.]"), "").replace(".", "").toLongOrNull() ?: 0L
-        plugin.logger.info("extractPrice: '$line' -> $extracted")
-        return extracted
-    }
     
     private fun handleMailBoxClick(player: Player, clickedItem: ItemStack, plugin: Main) {
         if (plugin.mailManager.handleMailBoxClick(player, clickedItem)) {
@@ -520,7 +712,12 @@ class AuctionUI : Listener {
     }
     
     private fun findAuctionItemId(lore: List<String>): Int {
-        val idLine = lore.find { it.startsWith("§8ID: ") }
-        return idLine?.replace("§8ID: ", "")?.toIntOrNull() ?: 0
+        return try {
+            val idLine = lore.find { it.startsWith("§8ID: ") }
+            val idString = idLine?.replace("§8ID: ", "")?.trim()
+            idString?.toIntOrNull() ?: 0
+        } catch (e: Exception) {
+            0
+        }
     }
 }

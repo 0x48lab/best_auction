@@ -18,7 +18,8 @@ data class AuctionItem(
     val expiresAt: LocalDateTime,
     val isActive: Boolean = true,
     val isSold: Boolean = false,
-    val quantity: Int = 1
+    val quantity: Int = 1,
+    val playerBidAmount: Long? = null // For tracking player's bid amount when viewing their bids
 )
 
 data class Bid(

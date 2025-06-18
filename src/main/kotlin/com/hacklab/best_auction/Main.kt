@@ -82,4 +82,6 @@ class Main : JavaPlugin() {
         logger.info(langManager.getMessage("general.economy_found", economy.name))
         return true
     }
+    
+    fun getEconomy(): Economy? = if (::economy.isInitialized) economy else null
 }

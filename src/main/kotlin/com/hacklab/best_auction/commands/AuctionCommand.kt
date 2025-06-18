@@ -31,13 +31,13 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
                     return true
                 }
                 
-                val price = args[1].toLongOrNull()
+                val price = ItemUtils.parseAmount(args[1])
                 if (price == null || price <= 0) {
                     plugin.langManager.sendErrorMessage(sender, "auction.invalid_price")
                     return true
                 }
                 
-                val buyoutPrice = args.getOrNull(2)?.toLongOrNull()
+                val buyoutPrice = args.getOrNull(2)?.let { ItemUtils.parseAmount(it) }
                 if (buyoutPrice != null && buyoutPrice <= price) {
                     plugin.langManager.sendErrorMessage(sender, "auction.invalid_buyout")
                     return true
@@ -57,7 +57,7 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
                 }
                 
                 val itemId = args[1].toIntOrNull()
-                val bidAmount = args[2].toLongOrNull()
+                val bidAmount = ItemUtils.parseAmount(args[2])
                 
                 if (itemId == null || bidAmount == null || bidAmount <= 0) {
                     plugin.langManager.sendErrorMessage(sender, "command.invalid_number")

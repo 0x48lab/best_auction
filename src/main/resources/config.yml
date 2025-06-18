@@ -36,6 +36,17 @@ auction:
   # Auction house tax percentage (0.03 = 3%)
   tax_rate: 0.03
 
+# Currency Settings
+currency:
+  # Use Vault for currency formatting (recommended)
+  use_vault_format: true
+  
+  # Fallback currency name (used when Vault is unavailable)
+  fallback_currency: "gil"
+  
+  # Currency symbol (used when use_vault_format is false)
+  currency_symbol: ""
+
 # UI Settings
 ui:
   # Items per page in auction house

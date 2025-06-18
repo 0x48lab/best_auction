@@ -11,6 +11,7 @@ import net.milkbowl.vault.economy.Economy
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
 import java.util.*
@@ -30,7 +31,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
         val fee = ItemUtils.calculateFee(startPrice, isStack)
         
         if (!economy.has(player, fee.toDouble())) {
-            player.sendMessage("§cYou need ${ItemUtils.formatPrice(fee)} gil to list this item!")
+            player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.not_enough_money")}")
             return false
         }
         
@@ -63,17 +64,17 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 
                 if (economy.withdrawPlayer(player, fee.toDouble()).transactionSuccess()) {
                     player.inventory.setItemInMainHand(null)
-                    player.sendMessage("§aItem listed successfully!")
-                    player.sendMessage("§7Listing fee: ${ItemUtils.formatPrice(fee)} gil")
-                    player.sendMessage("§7Expires: ${expiresAt.toLocalDate()}")
+                    player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.item_listed", "$auctionId")}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.listing_fee", "${ItemUtils.formatPriceWithCurrency(fee, economy, plugin)}")}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.expires_at", "${expiresAt.toLocalDate()}")}")
                     true
                 } else {
-                    player.sendMessage("§cFailed to charge listing fee!")
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.listing_fee_failed")}")
                     false
                 }
             } catch (e: Exception) {
                 plugin.logger.warning("Failed to list item: ${e.message}")
-                player.sendMessage("§cFailed to list item!")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.listing_failed")}")
                 false
             }
         }
@@ -85,12 +86,12 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 .singleOrNull()
             
             if (auctionItem == null) {
-                player.sendMessage("§cAuction item not found or inactive!")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.item_not_found")}")
                 return@transaction false
             }
             
             if (auctionItem[AuctionItems.sellerUuid] == player.uniqueId.toString()) {
-                player.sendMessage("§cYou cannot bid on your own items!")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.cannot_bid_own")}")
                 return@transaction false
             }
             
@@ -98,12 +99,12 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
             val buyoutPrice = auctionItem[AuctionItems.buyoutPrice]
             
             if (bidAmount <= currentPrice) {
-                player.sendMessage("§cBid must be higher than current price (${ItemUtils.formatPrice(currentPrice)})!")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.bid_too_low_general")}")
                 return@transaction false
             }
             
             if (!economy.has(player, bidAmount.toDouble())) {
-                player.sendMessage("§cYou don't have enough money!")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.not_enough_money")}")
                 return@transaction false
             }
             
@@ -111,8 +112,29 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
             
             if (isBuyout) {
                 completeSale(itemId, player.uniqueId, player.name, buyoutPrice!!)
-                player.sendMessage("§aBuyout successful! Item purchased for ${ItemUtils.formatPrice(buyoutPrice)} gil")
+                player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.buyout_success")}")
             } else {
+                // Remove any existing bid from this player first
+                val existingBid = Bids.select { 
+                    (Bids.auctionItem eq itemId) and 
+                    (Bids.bidderUuid eq player.uniqueId.toString())
+                }.orderBy(Bids.createdAt to SortOrder.DESC).firstOrNull()
+                
+                if (existingBid != null) {
+                    val oldBidAmount = existingBid[Bids.bidAmount]
+                    // Delete old bid
+                    Bids.deleteWhere { 
+                        (Bids.auctionItem eq itemId) and 
+                        (Bids.bidderUuid eq player.uniqueId.toString())
+                    }
+                    // Refund old bid amount
+                    if (economy.hasAccount(player)) {
+                        economy.depositPlayer(player, oldBidAmount.toDouble())
+                    }
+                    plugin.logger.info("Removed existing bid of $oldBidAmount from player ${player.name} on auction $itemId")
+                }
+                
+                // Add new bid
                 Bids.insert {
                     it[Bids.auctionItem] = itemId
                     it[Bids.bidderUuid] = player.uniqueId.toString()
@@ -120,11 +142,22 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                     it[Bids.bidAmount] = bidAmount
                 }
                 
+                // Withdraw new bid amount
+                if (!economy.withdrawPlayer(player, bidAmount.toDouble()).transactionSuccess()) {
+                    // If withdrawal fails, remove the bid we just added
+                    Bids.deleteWhere { 
+                        (Bids.auctionItem eq itemId) and 
+                        (Bids.bidderUuid eq player.uniqueId.toString())
+                    }
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.withdraw_failed")}")
+                    return@transaction false
+                }
+                
                 AuctionItems.update({ AuctionItems.id eq itemId }) {
                     it[AuctionItems.currentPrice] = bidAmount
                 }
                 
-                player.sendMessage("§aBid placed successfully! Amount: ${ItemUtils.formatPrice(bidAmount)} gil")
+                player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.bid_placed", "${ItemUtils.formatPriceWithCurrency(bidAmount, economy, plugin)}")}")
             }
             
             true
@@ -141,13 +174,13 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
             }.singleOrNull()
             
             if (auctionItem == null) {
-                player.sendMessage("§cAuction item not found or you're not the seller!")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.not_your_auction")}")
                 return@transaction false
             }
             
             val hasBids = !Bids.select { Bids.auctionItem eq itemId }.empty()
             if (hasBids) {
-                player.sendMessage("§cCannot cancel listing with active bids!")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.auction_has_bids")}")
                 return@transaction false
             }
             
@@ -167,7 +200,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 )
             }
             
-            player.sendMessage("§aListing cancelled! Item sent to your mailbox.")
+            player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.auction_cancelled")}")
             true
         }
     }
@@ -250,7 +283,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 economy.depositPlayer(seller, price.toDouble())
                 
                 if (seller.isOnline) {
-                    seller.player?.sendMessage("§aYour item sold for ${ItemUtils.formatPrice(price)} gil!")
+                    seller.player?.sendMessage("§a${plugin.langManager.getMessage(seller.player!!, "auction.item_sold", "${ItemUtils.formatPriceWithCurrency(price, economy, plugin)}")}")
                 }
             }
             
@@ -349,6 +382,165 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
         }
     }
     
+    fun getPlayerBids(playerUuid: UUID): List<AuctionItem> {
+        return transaction {
+            // Get all active auctions where the player has placed bids
+            // Use a subquery to get only the latest bid per auction for this player
+            val latestBids = AuctionItems.select { 
+                AuctionItems.isActive and not(AuctionItems.isSold)
+            }.mapNotNull { auctionRow ->
+                // For each active auction, check if player has a bid
+                val latestBid = Bids.select { 
+                    (Bids.auctionItem eq auctionRow[AuctionItems.id].value) and 
+                    (Bids.bidderUuid eq playerUuid.toString())
+                }.orderBy(Bids.createdAt to SortOrder.DESC).firstOrNull()
+                
+                if (latestBid != null) {
+                    val item = ItemUtils.deserializeItemStack(auctionRow[AuctionItems.itemData])
+                    if (item != null) {
+                        AuctionItem(
+                            id = auctionRow[AuctionItems.id].value,
+                            sellerUuid = UUID.fromString(auctionRow[AuctionItems.sellerUuid]),
+                            sellerName = auctionRow[AuctionItems.sellerName],
+                            itemStack = item,
+                            startPrice = auctionRow[AuctionItems.startPrice],
+                            buyoutPrice = auctionRow[AuctionItems.buyoutPrice],
+                            currentPrice = auctionRow[AuctionItems.currentPrice],
+                            category = auctionRow[AuctionItems.category],
+                            listingFee = auctionRow[AuctionItems.listingFee],
+                            createdAt = auctionRow[AuctionItems.createdAt],
+                            expiresAt = auctionRow[AuctionItems.expiresAt],
+                            quantity = auctionRow[AuctionItems.quantity],
+                            playerBidAmount = latestBid[Bids.bidAmount] // Player's latest bid amount
+                        )
+                    } else null
+                } else null
+            }
+            
+            // Sort by creation date (most recent first)
+            latestBids.sortedByDescending { it.createdAt }
+        }
+    }
+    
+    fun cancelPlayerBid(player: Player, auctionId: Int): Boolean {
+        return transaction {
+            try {
+                // Check if the auction exists and is still active
+                val auctionItem = AuctionItems.select { 
+                    AuctionItems.id eq auctionId and 
+                    AuctionItems.isActive and 
+                    not(AuctionItems.isSold)
+                }.singleOrNull()
+                
+                if (auctionItem == null) {
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.item_not_found")}")
+                    return@transaction false
+                }
+                
+                // Check if player has a bid on this auction
+                val playerBid = Bids.select { 
+                    (Bids.auctionItem eq auctionId) and 
+                    (Bids.bidderUuid eq player.uniqueId.toString())
+                }.orderBy(Bids.createdAt to SortOrder.DESC).firstOrNull()
+                
+                if (playerBid == null) {
+                    player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.no_bid_found")}")
+                    return@transaction false
+                }
+                
+                val bidAmount = playerBid[Bids.bidAmount]
+                
+                // Check if this player has the highest bid
+                val highestBid = Bids.select { Bids.auctionItem eq auctionId }
+                    .orderBy(Bids.bidAmount to SortOrder.DESC, Bids.createdAt to SortOrder.DESC)
+                    .firstOrNull()
+                
+                if (highestBid != null && highestBid[Bids.bidderUuid] == player.uniqueId.toString()) {
+                    // Player has the highest bid, need to find the second highest
+                    val secondHighestBid = Bids.select { 
+                        (Bids.auctionItem eq auctionId) and 
+                        not(Bids.bidderUuid eq player.uniqueId.toString())
+                    }.orderBy(Bids.bidAmount to SortOrder.DESC, Bids.createdAt to SortOrder.DESC)
+                        .firstOrNull()
+                    
+                    if (secondHighestBid != null) {
+                        // Update auction with second highest bid
+                        AuctionItems.update({ AuctionItems.id eq auctionId }) {
+                            it[AuctionItems.currentPrice] = secondHighestBid[Bids.bidAmount]
+                        }
+                    } else {
+                        // No other bids, revert to starting price
+                        AuctionItems.update({ AuctionItems.id eq auctionId }) {
+                            it[AuctionItems.currentPrice] = auctionItem[AuctionItems.startPrice]
+                        }
+                    }
+                }
+                
+                // Remove player's bid
+                Bids.deleteWhere { (Bids.auctionItem eq auctionId) and (Bids.bidderUuid eq player.uniqueId.toString()) }
+                
+                // Refund the bid amount
+                if (economy.hasAccount(player)) {
+                    economy.depositPlayer(player, bidAmount.toDouble())
+                }
+                
+                player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.bid_cancelled_success", "${ItemUtils.formatPriceWithCurrency(bidAmount, economy, plugin)}")}")
+                plugin.logger.info("Player ${player.name} cancelled bid of $bidAmount on auction $auctionId")
+                
+                true
+            } catch (e: Exception) {
+                plugin.logger.warning("Failed to cancel player bid: ${e.message}")
+                player.sendMessage("§c${plugin.langManager.getMessage(player, "general.unknown_error")}")
+                false
+            }
+        }
+    }
+    
+    fun getAuctionInfo(auctionId: Int, playerUuid: UUID? = null): AuctionItem? {
+        return transaction {
+            try {
+                val auctionRow = AuctionItems.select { 
+                    AuctionItems.id eq auctionId and 
+                    AuctionItems.isActive and 
+                    not(AuctionItems.isSold)
+                }.singleOrNull()
+                
+                if (auctionRow != null) {
+                    val item = ItemUtils.deserializeItemStack(auctionRow[AuctionItems.itemData])
+                    if (item != null) {
+                        // Get player's bid amount if playerUuid is provided
+                        val playerBidAmount = if (playerUuid != null) {
+                            Bids.select { 
+                                (Bids.auctionItem eq auctionId) and 
+                                (Bids.bidderUuid eq playerUuid.toString())
+                            }.orderBy(Bids.createdAt to SortOrder.DESC)
+                                .firstOrNull()?.get(Bids.bidAmount)
+                        } else null
+                        
+                        AuctionItem(
+                            id = auctionRow[AuctionItems.id].value,
+                            sellerUuid = UUID.fromString(auctionRow[AuctionItems.sellerUuid]),
+                            sellerName = auctionRow[AuctionItems.sellerName],
+                            itemStack = item,
+                            startPrice = auctionRow[AuctionItems.startPrice],
+                            buyoutPrice = auctionRow[AuctionItems.buyoutPrice],
+                            currentPrice = auctionRow[AuctionItems.currentPrice],
+                            category = auctionRow[AuctionItems.category],
+                            listingFee = auctionRow[AuctionItems.listingFee],
+                            createdAt = auctionRow[AuctionItems.createdAt],
+                            expiresAt = auctionRow[AuctionItems.expiresAt],
+                            quantity = auctionRow[AuctionItems.quantity],
+                            playerBidAmount = playerBidAmount
+                        )
+                    } else null
+                } else null
+            } catch (e: Exception) {
+                plugin.logger.warning("Failed to get auction info for ID $auctionId: ${e.message}")
+                null
+            }
+        }
+    }
+
     // Test data generation method
     fun createAuctionItem(
         sellerUuid: UUID,
