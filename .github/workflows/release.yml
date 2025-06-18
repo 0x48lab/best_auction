@@ -1,0 +1,155 @@
+name: Create Release and Deploy
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for changelog generation
+        
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+      
+    - name: Build plugin
+      run: ./gradlew clean shadowJar
+      
+    - name: Get version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+    - name: Get previous tag
+      id: previous_tag
+      run: |
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+        echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+        
+    - name: Generate changelog
+      id: changelog
+      run: |
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        
+        if [ -n "${{ steps.previous_tag.outputs.PREVIOUS_TAG }}" ]; then
+          echo "## 🔄 Changes since ${{ steps.previous_tag.outputs.PREVIOUS_TAG }}" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          
+          # Get commit messages between tags
+          git log --pretty=format:"- %s" ${{ steps.previous_tag.outputs.PREVIOUS_TAG }}..HEAD --no-merges >> $GITHUB_OUTPUT
+        else
+          echo "## 🎉 Initial Release" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "- First release of Best Auction plugin" >> $GITHUB_OUTPUT
+          echo "- Complete auction house system for Minecraft servers" >> $GITHUB_OUTPUT
+          echo "- Multi-language support (Japanese/English)" >> $GITHUB_OUTPUT
+          echo "- Vault economy integration" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "" >> $GITHUB_OUTPUT
+        echo "## 📋 Features" >> $GITHUB_OUTPUT
+        echo "- 🏪 Complete auction house system" >> $GITHUB_OUTPUT
+        echo "- 💰 Vault economy integration" >> $GITHUB_OUTPUT
+        echo "- 📬 Mail system for item delivery" >> $GITHUB_OUTPUT
+        echo "- 🌐 Multi-language support (JP/EN)" >> $GITHUB_OUTPUT
+        echo "- 🔍 Advanced search and filtering" >> $GITHUB_OUTPUT
+        echo "- ⚙️ Highly configurable settings" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "## 🛠️ Installation" >> $GITHUB_OUTPUT
+        echo "1. Download the JAR file" >> $GITHUB_OUTPUT
+        echo "2. Place in your server's \`plugins/\` folder" >> $GITHUB_OUTPUT
+        echo "3. Restart your server" >> $GITHUB_OUTPUT
+        echo "4. Configure \`plugins/best_auction/config.yml\` as needed" >> $GITHUB_OUTPUT
+        echo "" >> $GITHUB_OUTPUT
+        echo "## 📚 Documentation" >> $GITHUB_OUTPUT
+        echo "See [PLUGIN_DOCUMENTATION.md](https://github.com/0x48lab/best_auction/blob/main/PLUGIN_DOCUMENTATION.md) for detailed usage instructions." >> $GITHUB_OUTPUT
+        
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      id: create_release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Best Auction v${{ steps.version.outputs.VERSION }}
+        body: ${{ steps.changelog.outputs.CHANGELOG }}
+        draft: false
+        prerelease: false
+        
+    - name: Upload JAR to GitHub Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: build/libs/best_auction-1.0-SNAPSHOT-all.jar
+        asset_name: best_auction-v${{ steps.version.outputs.VERSION }}.jar
+        asset_content_type: application/java-archive
+        
+    - name: Upload to Modrinth
+      uses: Kir-Antipov/mc-publish@v3.3
+      with:
+        # Modrinth configuration
+        modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+        modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+        
+        # File configuration
+        files: |
+          build/libs/best_auction-*-all.jar
+          
+        # Project information
+        name: Best Auction v${{ steps.version.outputs.VERSION }}
+        version: ${{ steps.version.outputs.VERSION }}
+        version-type: release
+        
+        # Changelog
+        changelog: ${{ steps.changelog.outputs.CHANGELOG }}
+        
+        # Game versions
+        game-versions: |
+          1.20.6
+          1.20.5
+          1.20.4
+          1.20.1
+          1.20
+          
+        # Mod loaders
+        loaders: |
+          paper
+          spigot
+          bukkit
+          
+        # Dependencies
+        dependencies: |
+          vault(optional){modrinth:vault}
+          
+        # Java version requirement
+        java: 17
+        
+        # Additional settings
+        retry-attempts: 3
+        retry-delay: 10000
+        fail-mode: fail
