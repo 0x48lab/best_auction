@@ -59,7 +59,7 @@ jobs:
       with:
         # Modrinth configuration
         modrinth-id: best-auction  # Replace with your actual Modrinth project ID
-        modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+        modrinth-token: ${{ secrets.MODRINTH_PAT }}
         
         # File configuration
         files: |

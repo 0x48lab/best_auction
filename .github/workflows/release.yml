@@ -114,7 +114,7 @@ jobs:
       with:
         # Modrinth configuration
         modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
-        modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+        modrinth-token: ${{ secrets.MODRINTH_PAT }}
         
         # File configuration
         files: |
