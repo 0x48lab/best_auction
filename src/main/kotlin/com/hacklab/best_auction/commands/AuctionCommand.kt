@@ -1,13 +1,20 @@
 package com.hacklab.best_auction.commands
 
 import com.hacklab.best_auction.Main
+import com.hacklab.best_auction.data.AuctionCategory
 import com.hacklab.best_auction.ui.AuctionUI
 import com.hacklab.best_auction.ui.LanguageSettingsUI
+import com.hacklab.best_auction.utils.ItemUtils
+import org.bukkit.Material
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.ItemMeta
+import java.util.*
+import kotlin.random.Random
 
 class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
 
@@ -106,6 +113,16 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
                 plugin.bidHandler.handleConfirmCommand(sender)
             }
             
+            "testdata" -> {
+                if (!sender.hasPermission("auction.admin")) {
+                    plugin.langManager.sendErrorMessage(sender, "command.no_permission")
+                    return true
+                }
+                
+                val count = args.getOrNull(1)?.toIntOrNull() ?: 50
+                generateTestData(sender, count)
+            }
+            
             "help" -> {
                 sendHelpMessage(sender, label)
             }
@@ -118,10 +135,13 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
         return true
     }
 
-    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String> {
+    override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String>? {
         if (args.size == 1) {
-            return listOf("sell", "bid", "cancel", "search", "mail", "language", "confirm", "help")
-                .filter { it.startsWith(args[0].lowercase()) }
+            val commands = mutableListOf("sell", "bid", "cancel", "search", "mail", "language", "confirm", "help")
+            if (sender.hasPermission("auction.admin")) {
+                commands.add("testdata")
+            }
+            return commands.filter { it.startsWith(args[0].lowercase()) }
         }
         return emptyList()
     }
@@ -137,5 +157,82 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
         player.sendMessage("§e/$label confirm §7${plugin.langManager.getMessage(player, "command.help_confirm")}")
         player.sendMessage("§e/$label language §7- Change language settings")
         player.sendMessage("§e/$label help §7${plugin.langManager.getMessage(player, "command.help_help")}")
+        if (player.hasPermission("auction.admin")) {
+            player.sendMessage("§e/$label testdata [count] §7- Generate test auction data")
+        }
+    }
+    
+    private fun generateTestData(player: Player, count: Int) {
+        player.sendMessage("§aGenerating $count test auction items...")
+        
+        val testPlayers = listOf(
+            "TestUser1", "TestUser2", "TestUser3", "DemoSeller", "AuctionBot",
+            "MinecraftFan", "ItemCollector", "TradeMaster", "ShopKeeper", "CraftExpert"
+        )
+        
+        val testMaterials = listOf(
+            Material.DIAMOND_SWORD, Material.DIAMOND_PICKAXE, Material.DIAMOND_AXE,
+            Material.IRON_SWORD, Material.IRON_PICKAXE, Material.GOLDEN_APPLE,
+            Material.ENCHANTED_GOLDEN_APPLE, Material.NETHERITE_SWORD, Material.NETHERITE_PICKAXE,
+            Material.EMERALD, Material.DIAMOND, Material.GOLD_INGOT,
+            Material.ANCIENT_DEBRIS, Material.BEACON, Material.ELYTRA,
+            Material.TOTEM_OF_UNDYING, Material.DRAGON_EGG, Material.NETHER_STAR,
+            Material.SHULKER_BOX, Material.ENDER_CHEST, Material.CHEST,
+            Material.CRAFTING_TABLE, Material.FURNACE, Material.BREWING_STAND,
+            Material.ANVIL, Material.ENCHANTING_TABLE, Material.BOOKSHELF,
+            Material.REDSTONE, Material.REDSTONE_TORCH, Material.PISTON,
+            Material.STICKY_PISTON, Material.OBSERVER, Material.HOPPER,
+            Material.DISPENSER, Material.DROPPER, Material.COMPARATOR,
+            Material.REPEATER, Material.REDSTONE_LAMP, Material.TNT,
+            Material.COAL, Material.IRON_INGOT, Material.COPPER_INGOT,
+            Material.LAPIS_LAZULI, Material.QUARTZ, Material.AMETHYST_SHARD
+        )
+        
+        repeat(count) {
+            val material = testMaterials.random()
+            val seller = testPlayers.random()
+            val sellerUuid = UUID.nameUUIDFromBytes(seller.toByteArray())
+            
+            val itemStack = ItemStack(material, Random.nextInt(1, 5))
+            val meta = itemStack.itemMeta!!
+            
+            // Add some variety to item names
+            if (Random.nextBoolean()) {
+                val adjectives = listOf("Legendary", "Rare", "Epic", "Magical", "Ancient", "Cursed", "Blessed")
+                meta.setDisplayName("§6${adjectives.random()} ${material.name.replace("_", " ").lowercase().split(" ").joinToString(" ") { word -> word.replaceFirstChar(Char::uppercase) }}")
+            }
+            
+            itemStack.itemMeta = meta
+            
+            val basePrice = when {
+                material.name.contains("NETHERITE") -> Random.nextLong(5000, 20000)
+                material.name.contains("DIAMOND") -> Random.nextLong(1000, 5000)
+                material.name.contains("GOLD") -> Random.nextLong(500, 2000)
+                material.name.contains("IRON") -> Random.nextLong(100, 1000)
+                else -> Random.nextLong(10, 500)
+            }
+            
+            val currentPrice = basePrice + Random.nextLong(0, basePrice / 2)
+            val buyoutPrice = if (Random.nextBoolean()) currentPrice + Random.nextLong(currentPrice / 2, currentPrice * 2) else null
+            
+            val category = AuctionCategory.values().random()
+            
+            try {
+                plugin.auctionManager.createAuctionItem(
+                    sellerUuid = sellerUuid,
+                    sellerName = seller,
+                    itemStack = itemStack,
+                    startingPrice = basePrice,
+                    currentPrice = currentPrice,
+                    buyoutPrice = buyoutPrice,
+                    category = category.name
+                )
+            } catch (e: Exception) {
+                plugin.logger.warning("Failed to create test auction item: ${e.message}")
+            }
+        }
+        
+        player.sendMessage("§aTest data generation completed! Generated $count auction items.")
+        player.sendMessage("§7You can now test the pagination and bidding features.")
     }
 }

@@ -20,6 +20,21 @@ class AuctionUI : Listener {
         private const val MAIN_TITLE = "§6Auction House"
         private const val CATEGORY_TITLE = "§6Category: "
         private const val SEARCH_TITLE = "§6Search Results"
+        private const val ITEMS_PER_PAGE = 45
+        
+        // Session data to track current page and search parameters
+        private val playerPages = mutableMapOf<String, Int>()
+        private val playerSessions = mutableMapOf<String, PaginationSession>()
+        
+        data class PaginationSession(
+            val type: SessionType,
+            val category: AuctionCategory? = null,
+            val searchTerm: String? = null
+        )
+        
+        enum class SessionType {
+            CATEGORY, SEARCH, MY_LISTINGS
+        }
         
         fun openMainUI(player: Player, plugin: Main) {
             val inventory = Bukkit.createInventory(null, 54, plugin.langManager.getMessage(player, "ui.auction_house"))
@@ -63,40 +78,48 @@ class AuctionUI : Listener {
             player.openInventory(inventory)
         }
         
-        fun openCategoryUI(player: Player, plugin: Main, category: AuctionCategory) {
+        fun openCategoryUI(player: Player, plugin: Main, category: AuctionCategory, page: Int = 0) {
             val categoryDisplayName = getCategoryDisplayName(category, plugin, player)
             val inventory = Bukkit.createInventory(null, 54, "§6$categoryDisplayName")
             val items = plugin.auctionManager.getActiveListings(category.name)
             
-            items.take(45).forEachIndexed { index, auctionItem ->
+            // Store session data
+            playerPages[player.name] = page
+            playerSessions[player.name] = PaginationSession(SessionType.CATEGORY, category)
+            
+            val startIndex = page * ITEMS_PER_PAGE
+            val endIndex = minOf(startIndex + ITEMS_PER_PAGE, items.size)
+            
+            items.subList(startIndex, endIndex).forEachIndexed { index, auctionItem ->
                 val displayItem = createAuctionDisplayItem(auctionItem, player, plugin)
                 inventory.setItem(index, displayItem)
             }
             
-            val backItem = ItemStack(Material.ARROW)
-            val backMeta = backItem.itemMeta!!
-            backMeta.setDisplayName("§c" + plugin.langManager.getMessage(player, "ui.back"))
-            backItem.itemMeta = backMeta
-            inventory.setItem(53, backItem)
+            // Add navigation buttons  
+            addNavigationButtons(inventory, plugin, player, page, items.size)
             
             player.openInventory(inventory)
         }
         
-        fun openSearchUI(player: Player, plugin: Main, searchTerm: String) {
+        fun openSearchUI(player: Player, plugin: Main, searchTerm: String, page: Int = 0) {
             val searchTitle = plugin.langManager.getMessage(player, "ui.search_results")
             val inventory = Bukkit.createInventory(null, 54, "§6$searchTitle: $searchTerm")
             val items = plugin.auctionManager.getActiveListings(searchTerm = searchTerm)
             
-            items.take(45).forEachIndexed { index, auctionItem ->
+            // Store session data
+            playerPages[player.name] = page
+            playerSessions[player.name] = PaginationSession(SessionType.SEARCH, searchTerm = searchTerm)
+            
+            val startIndex = page * ITEMS_PER_PAGE
+            val endIndex = minOf(startIndex + ITEMS_PER_PAGE, items.size)
+            
+            items.subList(startIndex, endIndex).forEachIndexed { index, auctionItem ->
                 val displayItem = createAuctionDisplayItem(auctionItem, player, plugin)
                 inventory.setItem(index, displayItem)
             }
             
-            val backItem = ItemStack(Material.ARROW)
-            val backMeta = backItem.itemMeta!!
-            backMeta.setDisplayName("§c" + plugin.langManager.getMessage(player, "ui.back"))
-            backItem.itemMeta = backMeta
-            inventory.setItem(53, backItem)
+            // Add navigation buttons
+            addNavigationButtons(inventory, plugin, player, page, items.size)
             
             player.openInventory(inventory)
         }
@@ -178,6 +201,55 @@ class AuctionUI : Listener {
             
             return displayItem
         }
+        
+        private fun addNavigationButtons(inventory: Inventory, plugin: Main, player: Player, currentPage: Int, totalItems: Int) {
+            val totalPages = (totalItems + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE
+            
+            // Previous page button
+            if (currentPage > 0) {
+                val prevItem = ItemStack(Material.SPECTRAL_ARROW)
+                val prevMeta = prevItem.itemMeta!!
+                prevMeta.setDisplayName("§e« §a" + plugin.langManager.getMessage(player, "ui.previous_page"))
+                prevMeta.lore = listOf(
+                    "§7" + plugin.langManager.getMessage(player, "ui.page_info", "${currentPage + 1}", "$totalPages"),
+                    "§7← クリックで前のページへ"
+                )
+                prevItem.itemMeta = prevMeta
+                inventory.setItem(48, prevItem)
+            }
+            
+            // Page info
+            val pageInfoItem = ItemStack(Material.BOOK)
+            val pageInfoMeta = pageInfoItem.itemMeta!!
+            pageInfoMeta.setDisplayName("§e" + plugin.langManager.getMessage(player, "ui.page_indicator"))
+            pageInfoMeta.lore = listOf(
+                "§7" + plugin.langManager.getMessage(player, "ui.current_page", "${currentPage + 1}"),
+                "§7" + plugin.langManager.getMessage(player, "ui.total_pages", "$totalPages"),
+                "§7" + plugin.langManager.getMessage(player, "ui.total_items", "$totalItems")
+            )
+            pageInfoItem.itemMeta = pageInfoMeta
+            inventory.setItem(49, pageInfoItem)
+            
+            // Next page button
+            if (currentPage < totalPages - 1) {
+                val nextItem = ItemStack(Material.TIPPED_ARROW)
+                val nextMeta = nextItem.itemMeta!!
+                nextMeta.setDisplayName("§a" + plugin.langManager.getMessage(player, "ui.next_page") + " §e»")
+                nextMeta.lore = listOf(
+                    "§7" + plugin.langManager.getMessage(player, "ui.page_info", "${currentPage + 1}", "$totalPages"),
+                    "§7クリックで次のページへ →"
+                )
+                nextItem.itemMeta = nextMeta
+                inventory.setItem(50, nextItem)
+            }
+            
+            // Back to main menu button
+            val backItem = ItemStack(Material.ARROW)
+            val backMeta = backItem.itemMeta!!
+            backMeta.setDisplayName("§c" + plugin.langManager.getMessage(player, "ui.back"))
+            backItem.itemMeta = backMeta
+            inventory.setItem(53, backItem)
+        }
     }
 
     @EventHandler
@@ -257,13 +329,59 @@ class AuctionUI : Listener {
             return
         }
         
+        // Handle pagination buttons
+        if (clickedItem.type == Material.SPECTRAL_ARROW || clickedItem.type == Material.TIPPED_ARROW) {
+            val displayName = clickedItem.itemMeta?.displayName ?: ""
+            val currentPage = playerPages[player.name] ?: 0
+            val session = playerSessions[player.name] ?: return
+            
+            when {
+                displayName.contains(plugin.langManager.getMessage(player, "ui.previous_page")) -> {
+                    when (session.type) {
+                        SessionType.CATEGORY -> session.category?.let { openCategoryUI(player, plugin, it, currentPage - 1) }
+                        SessionType.SEARCH -> session.searchTerm?.let { openSearchUI(player, plugin, it, currentPage - 1) }
+                        SessionType.MY_LISTINGS -> openMyListingsUI(player, plugin, currentPage - 1)
+                    }
+                    return
+                }
+                displayName.contains(plugin.langManager.getMessage(player, "ui.next_page")) -> {
+                    when (session.type) {
+                        SessionType.CATEGORY -> session.category?.let { openCategoryUI(player, plugin, it, currentPage + 1) }
+                        SessionType.SEARCH -> session.searchTerm?.let { openSearchUI(player, plugin, it, currentPage + 1) }
+                        SessionType.MY_LISTINGS -> openMyListingsUI(player, plugin, currentPage + 1)
+                    }
+                    return
+                }
+            }
+        }
+        
+        // Handle page info button (no action)
+        if (clickedItem.type == Material.BOOK && clickedItem.itemMeta?.displayName?.contains(plugin.langManager.getMessage(player, "ui.page_indicator")) == true) {
+            return
+        }
+        
         val meta = clickedItem.itemMeta ?: return
         val lore = meta.lore ?: return
         
-        val sellerLine = lore.find { it.startsWith("§7${plugin.langManager.getMessage(player, "ui.seller")}:") } ?: return
-        val seller = sellerLine.replace("§7${plugin.langManager.getMessage(player, "ui.seller")}: §f", "")
+        // Debug: Print lore contents
+        plugin.logger.info("=== AUCTION ITEM CLICK DEBUG ===")
+        plugin.logger.info("Player: ${player.name}")
+        plugin.logger.info("Item: ${clickedItem.type}")
+        plugin.logger.info("Lore contents:")
+        lore.forEachIndexed { index, line ->
+            plugin.logger.info("  [$index] $line")
+        }
         
         val auctionId = findAuctionItemId(lore)
+        
+        val sellerLabel = plugin.langManager.getMessage(player, "ui.seller")
+        val sellerLine = lore.find { it.startsWith("§7$sellerLabel:") } 
+        if (sellerLine == null) {
+            plugin.logger.warning("Could not find seller line in lore for auction $auctionId")
+            player.sendMessage("§cエラー: 出品者情報が見つかりません")
+            return
+        }
+        val seller = sellerLine.replace("§7$sellerLabel: §f", "")
         
         if (seller == player.name) {
             // This is the player's own item - allow cancellation
@@ -277,11 +395,19 @@ class AuctionUI : Listener {
             return
         }
         
-        val priceLine = lore.find { it.startsWith("§7Current Price:") } ?: return
-        val currentPrice = extractPrice(priceLine)
+        val currentBidLabel = plugin.langManager.getMessage(player, "ui.current_bid")
+        val buyoutPriceLabel = plugin.langManager.getMessage(player, "ui.buyout_price")
         
-        val buyoutLine = lore.find { it.startsWith("§7Buyout Price:") }
-        val buyoutPrice = buyoutLine?.let { extractPrice(it) }
+        val priceLine = lore.find { it.startsWith("§7$currentBidLabel:") } 
+        if (priceLine == null) {
+            plugin.logger.warning("Could not find current price line in lore for auction $auctionId")
+            player.sendMessage("§cエラー: 価格情報が見つかりません")
+            return
+        }
+        val currentPrice = extractPrice(priceLine, plugin)
+        
+        val buyoutLine = lore.find { it.startsWith("§7$buyoutPriceLabel:") }
+        val buyoutPrice = buyoutLine?.let { extractPrice(it, plugin) }
         
         player.closeInventory()
         
@@ -291,28 +417,37 @@ class AuctionUI : Listener {
             plugin.bidHandler.startBuyout(player, auctionId, buyoutPrice)
             plugin.logger.info("Started buyout session for player ${player.name}, itemId: $auctionId, price: $buyoutPrice")
         } else {
-            player.sendMessage("§eCurrent price: ${ItemUtils.formatPrice(currentPrice)} gil")
-            player.sendMessage("§eEnter your bid amount:")
+            player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            player.sendMessage("§6${plugin.langManager.getMessage(player, "ui.bid_prompt_header")}")
+            player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_price")}: §a${ItemUtils.formatPrice(currentPrice)} gil")
+            player.sendMessage("§e${plugin.langManager.getMessage(player, "ui.enter_bid_amount")}:")
+            player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.bid_command_hint")}: §7/ah bid $auctionId <金額>")
+            player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.minimum_bid")}: §7${ItemUtils.formatPrice(currentPrice + 1)} gil")
+            player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             plugin.bidHandler.startBid(player, auctionId, currentPrice)
             plugin.logger.info("Started bid session for player ${player.name}, itemId: $auctionId, currentPrice: $currentPrice")
         }
     }
     
-    private fun openMyListingsUI(player: Player, plugin: Main) {
+    private fun openMyListingsUI(player: Player, plugin: Main, page: Int = 0) {
         val title = plugin.langManager.getMessage(player, "ui.your_auctions")
         val inventory = Bukkit.createInventory(null, 54, "§6$title")
         val myItems = plugin.auctionManager.getPlayerListings(player.uniqueId)
         
-        myItems.take(45).forEachIndexed { index, auctionItem ->
+        // Store session data
+        playerPages[player.name] = page
+        playerSessions[player.name] = PaginationSession(SessionType.MY_LISTINGS)
+        
+        val startIndex = page * ITEMS_PER_PAGE
+        val endIndex = minOf(startIndex + ITEMS_PER_PAGE, myItems.size)
+        
+        myItems.subList(startIndex, endIndex).forEachIndexed { index, auctionItem ->
             val displayItem = createAuctionDisplayItem(auctionItem, player, plugin)
             inventory.setItem(index, displayItem)
         }
         
-        val backItem = ItemStack(Material.ARROW)
-        val backMeta = backItem.itemMeta!!
-        backMeta.setDisplayName("§c" + plugin.langManager.getMessage(player, "ui.back"))
-        backItem.itemMeta = backMeta
-        inventory.setItem(53, backItem)
+        // Add navigation buttons
+        addNavigationButtons(inventory, plugin, player, page, myItems.size)
         
         player.openInventory(inventory)
     }
@@ -323,6 +458,28 @@ class AuctionUI : Listener {
             return
         }
         
+        // Handle pagination buttons
+        if (clickedItem.type == Material.SPECTRAL_ARROW || clickedItem.type == Material.TIPPED_ARROW) {
+            val displayName = clickedItem.itemMeta?.displayName ?: ""
+            val currentPage = playerPages[player.name] ?: 0
+            
+            when {
+                displayName.contains(plugin.langManager.getMessage(player, "ui.previous_page")) -> {
+                    openMyListingsUI(player, plugin, currentPage - 1)
+                    return
+                }
+                displayName.contains(plugin.langManager.getMessage(player, "ui.next_page")) -> {
+                    openMyListingsUI(player, plugin, currentPage + 1)
+                    return
+                }
+            }
+        }
+        
+        // Handle page info button (no action)
+        if (clickedItem.type == Material.BOOK && clickedItem.itemMeta?.displayName?.contains(plugin.langManager.getMessage(player, "ui.page_indicator")) == true) {
+            return
+        }
+        
         val meta = clickedItem.itemMeta ?: return
         val lore = meta.lore ?: return
         
@@ -330,9 +487,10 @@ class AuctionUI : Listener {
         val auctionId = findAuctionItemId(lore)
         
         // Check if it's the player's own listing (from seller line)
-        val sellerLine = lore.find { it.startsWith("§7${plugin.langManager.getMessage(player, "ui.seller")}:") }
+        val sellerLabel = plugin.langManager.getMessage(player, "ui.seller")
+        val sellerLine = lore.find { it.startsWith("§7$sellerLabel:") }
         if (sellerLine != null) {
-            val seller = sellerLine.replace("§7${plugin.langManager.getMessage(player, "ui.seller")}: §f", "")
+            val seller = sellerLine.replace("§7$sellerLabel: §f", "")
             
             if (seller == player.name) {
                 // This is the player's own item - allow cancellation
@@ -348,8 +506,10 @@ class AuctionUI : Listener {
         }
     }
     
-    private fun extractPrice(line: String): Long {
-        return line.replace(Regex("[^0-9.]"), "").replace(".", "").toLongOrNull() ?: 0L
+    private fun extractPrice(line: String, plugin: Main): Long {
+        val extracted = line.replace(Regex("[^0-9.]"), "").replace(".", "").toLongOrNull() ?: 0L
+        plugin.logger.info("extractPrice: '$line' -> $extracted")
+        return extracted
     }
     
     private fun handleMailBoxClick(player: Player, clickedItem: ItemStack, plugin: Main) {

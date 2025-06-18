@@ -8,5 +8,13 @@ softdepend: [ Vault ]
 commands:
   auction:
     description: Main auction house command
-    usage: /auction [help|sell|bid|cancel|search|mail]
+    usage: /auction [help|sell|bid|cancel|search|mail|testdata]
     aliases: [ ah ]
+
+permissions:
+  auction.admin:
+    description: Admin permissions for auction commands
+    default: op
+  auction.use:
+    description: Basic auction usage permissions
+    default: true

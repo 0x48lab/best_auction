@@ -9,6 +9,7 @@ import com.hacklab.best_auction.database.Bids
 import com.hacklab.best_auction.utils.ItemUtils
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
@@ -344,6 +345,41 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 plugin.logger.warning("Failed to cancel auction: ${e.message}")
                 player.sendMessage(plugin.langManager.getMessage(player, "general.unknown_error"))
                 false
+            }
+        }
+    }
+    
+    // Test data generation method
+    fun createAuctionItem(
+        sellerUuid: UUID,
+        sellerName: String,
+        itemStack: ItemStack,
+        startingPrice: Long,
+        currentPrice: Long,
+        buyoutPrice: Long?,
+        category: String
+    ): Int? {
+        val expiresAt = LocalDateTime.now().plusDays(7).plusHours(kotlin.random.Random.nextLong(1, 24))
+        
+        return transaction {
+            try {
+                val auctionId = AuctionItems.insert {
+                    it[AuctionItems.sellerUuid] = sellerUuid.toString()
+                    it[AuctionItems.sellerName] = sellerName
+                    it[AuctionItems.itemData] = ItemUtils.serializeItemStack(itemStack)
+                    it[AuctionItems.startPrice] = startingPrice
+                    it[AuctionItems.buyoutPrice] = buyoutPrice
+                    it[AuctionItems.currentPrice] = currentPrice
+                    it[AuctionItems.category] = category
+                    it[AuctionItems.listingFee] = 0L // No fee for test data
+                    it[AuctionItems.expiresAt] = expiresAt
+                    it[AuctionItems.quantity] = itemStack.amount
+                } get AuctionItems.id
+                
+                auctionId.value
+            } catch (e: Exception) {
+                plugin.logger.warning("Failed to create test auction item: ${e.message}")
+                null
             }
         }
     }

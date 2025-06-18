@@ -1,6 +1,7 @@
 package com.hacklab.best_auction.handlers
 
 import com.hacklab.best_auction.Main
+import com.hacklab.best_auction.utils.ItemUtils
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -78,20 +79,47 @@ class BidHandler(private val plugin: Main) : Listener {
     private fun handleBidInput(player: Player, input: String) {
         val session = activeBids.remove(player.uniqueId) ?: return
         
-        if (input.equals("cancel", ignoreCase = true)) {
-            player.sendMessage("§cBid cancelled.")
+        if (input.equals("cancel", ignoreCase = true) || input.equals("キャンセル", ignoreCase = true)) {
+            player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.bid_cancelled")}")
             return
         }
         
-        val bidAmount = input.toLongOrNull()
-        if (bidAmount == null || bidAmount <= session.currentPrice) {
-            player.sendMessage("§cInvalid bid amount! Must be higher than ${session.currentPrice}")
+        // Parse bid amount - allow both direct numbers and formatted text
+        val bidAmount = parseAmount(input)
+        if (bidAmount == null) {
+            player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.invalid_bid_format")}")
+            player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.bid_format_example")}: 1000, 1k, 1.5k")
             return
         }
+        
+        if (bidAmount <= session.currentPrice) {
+            player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.bid_too_low", "${ItemUtils.formatPrice(session.currentPrice + 1)}")}")
+            return
+        }
+        
+        // Confirmation message
+        player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.bid_processing")}")
+        player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.bid_amount")}: §e${ItemUtils.formatPrice(bidAmount)} gil")
         
         plugin.server.scheduler.runTask(plugin, Runnable {
             plugin.auctionManager.placeBid(player, session.itemId, bidAmount)
         })
+    }
+    
+    private fun parseAmount(input: String): Long? {
+        val cleanInput = input.replace(",", "").replace(" ", "").lowercase()
+        
+        return when {
+            cleanInput.endsWith("k") -> {
+                val number = cleanInput.dropLast(1).toDoubleOrNull()
+                if (number != null) (number * 1000).toLong() else null
+            }
+            cleanInput.endsWith("m") -> {
+                val number = cleanInput.dropLast(1).toDoubleOrNull()
+                if (number != null) (number * 1000000).toLong() else null
+            }
+            else -> cleanInput.toLongOrNull()
+        }
     }
     
     
