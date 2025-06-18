@@ -114,6 +114,12 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
             }
             
             "testdata" -> {
+                // Check if debug commands are enabled
+                if (!plugin.config.getBoolean("debug.enable_debug_commands", false)) {
+                    plugin.langManager.sendErrorMessage(sender, "general.debug_commands_disabled")
+                    return true
+                }
+                
                 if (!sender.hasPermission("auction.admin")) {
                     plugin.langManager.sendErrorMessage(sender, "command.no_permission")
                     return true
@@ -138,7 +144,7 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String>? {
         if (args.size == 1) {
             val commands = mutableListOf("sell", "bid", "cancel", "search", "mail", "language", "confirm", "help")
-            if (sender.hasPermission("auction.admin")) {
+            if (sender.hasPermission("auction.admin") && plugin.config.getBoolean("debug.enable_debug_commands", false)) {
                 commands.add("testdata")
             }
             return commands.filter { it.startsWith(args[0].lowercase()) }

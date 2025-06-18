@@ -37,7 +37,8 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
         
         val processedItem = item.clone()
         val category = AuctionCategory.fromMaterial(item.type)
-        val expiresAt = LocalDateTime.now().plusDays(9).plusHours(12)
+        val durationHours = plugin.config.getInt("auction.default_duration", 228)
+        val expiresAt = LocalDateTime.now().plusHours(durationHours.toLong())
         
         plugin.logger.info("Listing item: ${item.type.name} -> Category: ${category.name}")
         if (item.itemMeta?.hasDisplayName() == true) {
@@ -66,7 +67,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                     player.inventory.setItemInMainHand(null)
                     player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.item_listed", "$auctionId")}")
                     player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.listing_fee", "${ItemUtils.formatPriceWithCurrency(fee, economy, plugin)}")}")
-                    player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.expires_at", "${expiresAt.toLocalDate()}")}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.expires_at", ItemUtils.formatDate(expiresAt, plugin))}")
                     true
                 } else {
                     player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.listing_fee_failed")}")

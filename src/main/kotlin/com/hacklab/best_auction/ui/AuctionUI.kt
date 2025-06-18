@@ -189,7 +189,9 @@ class AuctionUI : Listener {
             }
             
             lore.add("§7数量: §f${auctionItem.quantity}")
-            lore.add("§7期限: §f${auctionItem.expiresAt.toLocalDate()}")
+            lore.add("§7期限: §f${ItemUtils.formatDate(auctionItem.expiresAt, plugin)}")
+            val timeRemaining = ItemUtils.formatTimeRemaining(auctionItem.expiresAt, plugin.langManager, player)
+            lore.add("§7${plugin.langManager.getMessage(player, "time.remaining", timeRemaining)}")
             lore.add("")
             // Check if this is the player's own item
             if (auctionItem.sellerUuid == player.uniqueId) {
@@ -276,7 +278,9 @@ class AuctionUI : Listener {
             }
             
             lore.add("§7数量: §f${auctionItem.quantity}")
-            lore.add("§7期限: §f${auctionItem.expiresAt.toLocalDate()}")
+            lore.add("§7期限: §f${ItemUtils.formatDate(auctionItem.expiresAt, plugin)}")
+            val timeRemaining = ItemUtils.formatTimeRemaining(auctionItem.expiresAt, plugin.langManager, player)
+            lore.add("§7${plugin.langManager.getMessage(player, "time.remaining", timeRemaining)}")
             lore.add("")
             lore.add("§e${plugin.langManager.getMessage(player, "ui.click_to_change_bid")}")
             lore.add("§c${plugin.langManager.getMessage(player, "ui.right_click_to_cancel_bid")}")
@@ -504,6 +508,8 @@ class AuctionUI : Listener {
                     plugin.bidHandler.startBuyout(player, auctionId, buyoutPrice)
                     plugin.logger.info("Started buyout session for player ${player.name}, itemId: $auctionId, price: $buyoutPrice")
                 } else {
+                    val timeRemaining = ItemUtils.formatTimeRemaining(auctionInfo.expiresAt, plugin.langManager, player)
+                    
                     player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                     player.sendMessage("§6${plugin.langManager.getMessage(player, "ui.bid_prompt_header")}")
                     player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_highest_bid")}: §a${ItemUtils.formatPriceWithCurrency(currentPrice, plugin.getEconomy(), plugin)}")
@@ -512,6 +518,7 @@ class AuctionUI : Listener {
                         player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §6${ItemUtils.formatPriceWithCurrency(buyoutPrice, plugin.getEconomy(), plugin)}")
                         player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.buyout_hint")}")
                     }
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "time.remaining", timeRemaining)}")
                     player.sendMessage("")
                     player.sendMessage("§e${plugin.langManager.getMessage(player, "ui.enter_bid_amount")}:")
                     player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.bid_command_hint")}: §7/ah bid $auctionId <金額>")
@@ -678,6 +685,7 @@ class AuctionUI : Listener {
                     if (auctionInfo != null) {
                         val currentPrice = auctionInfo.currentPrice
                         val playerBidAmount = auctionInfo.playerBidAmount ?: 0L
+                        val timeRemaining = ItemUtils.formatTimeRemaining(auctionInfo.expiresAt, plugin.langManager, player)
                         
                         player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                         player.sendMessage("§6${plugin.langManager.getMessage(player, "ui.change_bid_header")}")
@@ -688,6 +696,7 @@ class AuctionUI : Listener {
                             player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §6${ItemUtils.formatPriceWithCurrency(auctionInfo.buyoutPrice, plugin.getEconomy(), plugin)}")
                             player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.buyout_hint")}")
                         }
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "time.remaining", timeRemaining)}")
                         player.sendMessage("")
                         player.sendMessage("§e${plugin.langManager.getMessage(player, "ui.enter_new_bid_amount")}:")
                         player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.bid_command_hint")}: §7/ah bid $auctionId <金額>")

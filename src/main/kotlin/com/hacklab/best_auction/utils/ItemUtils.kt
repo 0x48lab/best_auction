@@ -139,4 +139,48 @@ object ItemUtils {
             }
         }
     }
+    
+    fun formatTimeRemaining(expiresAt: java.time.LocalDateTime, langManager: com.hacklab.best_auction.utils.LangManager, player: org.bukkit.entity.Player): String {
+        val now = java.time.LocalDateTime.now()
+        val duration = java.time.Duration.between(now, expiresAt)
+        
+        return when {
+            duration.isNegative || duration.isZero -> langManager.getMessage(player, "time.expired")
+            duration.toDays() > 0 -> {
+                val days = duration.toDays()
+                val hours = duration.toHours() % 24
+                if (hours > 0) {
+                    langManager.getMessage(player, "time.days_hours", "$days", "$hours")
+                } else {
+                    langManager.getMessage(player, "time.days", "$days")
+                }
+            }
+            duration.toHours() > 0 -> {
+                val hours = duration.toHours()
+                val minutes = (duration.toMinutes() % 60)
+                if (minutes > 0) {
+                    langManager.getMessage(player, "time.hours_minutes", "$hours", "$minutes")
+                } else {
+                    langManager.getMessage(player, "time.hours", "$hours")
+                }
+            }
+            duration.toMinutes() > 0 -> {
+                langManager.getMessage(player, "time.minutes", "${duration.toMinutes()}")
+            }
+            else -> {
+                langManager.getMessage(player, "time.seconds", "${duration.seconds}")
+            }
+        }
+    }
+    
+    fun formatDate(dateTime: java.time.LocalDateTime, plugin: com.hacklab.best_auction.Main?): String {
+        return try {
+            val dateFormat = plugin?.config?.getString("ui.date_format") ?: "yyyy-MM-dd"
+            val formatter = java.time.format.DateTimeFormatter.ofPattern(dateFormat)
+            dateTime.format(formatter)
+        } catch (e: Exception) {
+            // Fallback to default format if pattern is invalid
+            dateTime.toLocalDate().toString()
+        }
+    }
 }

@@ -139,7 +139,7 @@ class MailManager(private val plugin: Main) {
         }
         val playerLang = plugin.langManager.getPlayerLanguageSetting(player)
         val reasonMsg = plugin.langManager.getMessage(player, "mail.mail_reason", "§f${mailItem.reason}")
-        val dateMsg = plugin.langManager.getMessage(player, "mail.mail_date", "§f${mailItem.createdAt.toLocalDate()}")
+        val dateMsg = plugin.langManager.getMessage(player, "mail.mail_date", "§f${com.hacklab.best_auction.utils.ItemUtils.formatDate(mailItem.createdAt, plugin)}")
         plugin.logger.info("MailBox Debug - Player: ${player.name}, Lang: $playerLang, Reason msg: '$reasonMsg', Date msg: '$dateMsg'")
         
         lore.add("§7$reasonMsg")

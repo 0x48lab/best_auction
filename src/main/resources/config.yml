@@ -15,11 +15,11 @@ database:
   
 # Auction Settings
 auction:
-  # Default auction duration in hours
-  default_duration: 24
+  # Default auction duration in hours (current: 9 days 12 hours = 228 hours)
+  default_duration: 228
   
   # Maximum auction duration in hours
-  max_duration: 168  # 7 days
+  max_duration: 336  # 14 days
   
   # Minimum auction duration in hours
   min_duration: 1
@@ -54,6 +54,10 @@ ui:
   
   # Max search results to display
   max_search_results: 100
+  
+  # Date format for auction expiry display
+  # Examples: "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy", "yyyy年MM月dd日"
+  date_format: "yyyy-MM-dd"
 
 # Mail Settings
 mail:
@@ -70,3 +74,9 @@ permissions:
   
   # Base permission node
   base_permission: "bestauction.use"
+
+# Debug Settings
+debug:
+  # Enable debug commands (testdata, etc.)
+  # WARNING: Only enable in development/testing environments
+  enable_debug_commands: false

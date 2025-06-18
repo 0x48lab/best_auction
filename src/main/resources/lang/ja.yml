@@ -10,7 +10,7 @@ command:
   no_permission: "このコマンドを使用する権限がありません！"
   help_header: "=== オークションハウス ヘルプ ==="
   help_gui: "- オークションハウスGUIを開く"
-  help_sell: "- 手に持っているアイテムを出品"
+  help_sell: "- 手に持っているアイテムを出品 [価格] [即決価格]"
   help_bid: "- アイテムに入札"
   help_cancel: "- 出品をキャンセル"
   help_search: "- アイテムを検索"
@@ -152,6 +152,9 @@ time:
   minutes: "{0}分"
   seconds: "{0}秒"
   expired: "期限切れ"
+  days_hours: "{0}日{1}時間"
+  hours_minutes: "{0}時間{1}分"
+  remaining: "残り時間: {0}"
 
 # Categories (カテゴリ)
 category:
@@ -180,3 +183,4 @@ general:
   feature_disabled: "この機能は現在無効になっています！"
   unknown_error: "不明なエラーが発生しました！"
   no_pending_confirmation: "実行待ちの確認はありません。"
+  debug_commands_disabled: "デバッグコマンドは無効です。設定で有効にしてください: debug.enable_debug_commands"

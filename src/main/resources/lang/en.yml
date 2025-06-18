@@ -10,7 +10,7 @@ command:
   no_permission: "You don't have permission to use this command!"
   help_header: "=== Auction House Help ==="
   help_gui: "- Open auction house GUI"
-  help_sell: "- List item in hand"
+  help_sell: "- List item in hand [price] [buyout]"
   help_bid: "- Bid on an item"
   help_cancel: "- Cancel your listing"
   help_search: "- Search for items"
@@ -153,6 +153,9 @@ time:
   minutes: "{0}m"
   seconds: "{0}s"
   expired: "Expired"
+  days_hours: "{0}d {1}h"
+  hours_minutes: "{0}h {1}m"
+  remaining: "Time left: {0}"
 
 # Categories
 category:
@@ -181,3 +184,4 @@ general:
   feature_disabled: "This feature is currently disabled!"
   unknown_error: "An unknown error occurred!"
   no_pending_confirmation: "No pending confirmation to execute."
+  debug_commands_disabled: "Debug commands are disabled. Enable in config: debug.enable_debug_commands"
