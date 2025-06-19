@@ -50,3 +50,14 @@ object PlayerLanguageSettings : IntIdTable("player_language_settings") {
     val language = varchar("language", 10).default("auto")
     val updatedAt = datetime("updated_at").default(LocalDateTime.now())
 }
+
+object CloudSyncStatus : IntIdTable("cloud_sync_status") {
+    val serverId = varchar("server_id", 50)
+    val syncType = varchar("sync_type", 20) // 'full', 'incremental'
+    val lastSyncAt = datetime("last_sync_at")
+    val syncedAuctions = integer("synced_auctions").default(0)
+    val syncedBids = integer("synced_bids").default(0)
+    val status = varchar("status", 20).default("pending") // 'pending', 'in_progress', 'completed', 'failed'
+    val errorMessage = text("error_message").nullable()
+    val createdAt = datetime("created_at").default(LocalDateTime.now())
+}

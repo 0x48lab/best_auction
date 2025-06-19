@@ -2,6 +2,7 @@ package com.hacklab.best_auction.managers
 
 import com.hacklab.best_auction.Main
 import com.hacklab.best_auction.data.AuctionCategory
+import com.hacklab.best_auction.data.AuctionEventData
 import com.hacklab.best_auction.data.AuctionItem
 import com.hacklab.best_auction.data.Bid
 import com.hacklab.best_auction.database.AuctionItems
@@ -16,7 +17,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
 import java.util.*
 
-class AuctionManager(private val plugin: Main, private val economy: Economy) {
+class AuctionManager(private val plugin: Main, private val economy: Economy, private val cloudEventManager: CloudEventManager) {
 
     fun listItem(player: Player, startPrice: Long, buyoutPrice: Long?): Boolean {
         val item = player.inventory.itemInMainHand
@@ -89,6 +90,21 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                     player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.item_listed", "${auctionId.value}")}")
                     player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.listing_fee", "${ItemUtils.formatPriceWithCurrency(fee, economy, plugin)}")}")
                     player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.expires_at", ItemUtils.formatDate(expiresAt, plugin))}")
+                    
+                    // Send cloud event
+                    val eventData = AuctionEventData.createItemListedEvent(
+                        serverId = plugin.config.getString("cloud.server_id", "default-server")!!,
+                        auctionId = auctionId.value,
+                        sellerUuid = player.uniqueId.toString(),
+                        sellerName = player.name,
+                        itemName = processedItem.itemMeta?.displayName ?: processedItem.type.name,
+                        itemType = processedItem.type.name,
+                        quantity = processedItem.amount,
+                        startPrice = startPrice,
+                        buyoutPrice = buyoutPrice
+                    )
+                    cloudEventManager.sendEvent(eventData)
+                    
                     true
                 } else {
                     player.sendMessage("§c${plugin.langManager.getMessage(player, "auction.listing_fee_failed")}")
@@ -135,6 +151,21 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
             if (isBuyout) {
                 completeSale(itemId, player.uniqueId, player.name, buyoutPrice!!)
                 player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.buyout_success")}")
+                
+                // Send cloud event for buyout (treated as ITEM_SOLD)
+                val sellerUuid = auctionItem[AuctionItems.sellerUuid]
+                val sellerName = auctionItem[AuctionItems.sellerName]
+                val eventData = AuctionEventData.createItemSoldEvent(
+                    serverId = plugin.config.getString("cloud.server_id", "default-server")!!,
+                    auctionId = itemId,
+                    sellerUuid = sellerUuid,
+                    sellerName = sellerName,
+                    buyerUuid = player.uniqueId.toString(),
+                    buyerName = player.name,
+                    finalPrice = buyoutPrice,
+                    wasBuyout = true
+                )
+                cloudEventManager.sendEvent(eventData)
             } else {
                 // Remove any existing bid from this player first
                 val existingBid = Bids.select { 
@@ -180,6 +211,17 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 }
                 
                 player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.bid_placed", "${ItemUtils.formatPriceWithCurrency(bidAmount, economy, plugin)}")}")
+                
+                // Send cloud event for bid
+                val eventData = AuctionEventData.createBidPlacedEvent(
+                    serverId = plugin.config.getString("cloud.server_id", "default-server")!!,
+                    auctionId = itemId,
+                    bidderUuid = player.uniqueId.toString(),
+                    bidderName = player.name,
+                    bidAmount = bidAmount,
+                    previousPrice = currentPrice
+                )
+                cloudEventManager.sendEvent(eventData)
             }
             
             true
@@ -313,6 +355,19 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 it[AuctionItems.isActive] = false
                 it[AuctionItems.isSold] = true
             }
+            
+            // Send cloud event for item sold
+            val eventData = AuctionEventData.createItemSoldEvent(
+                serverId = plugin.config.getString("cloud.server_id", "default-server")!!,
+                auctionId = itemId,
+                sellerUuid = sellerUuid.toString(),
+                sellerName = sellerName,
+                buyerUuid = buyerUuid.toString(),
+                buyerName = buyerName,
+                finalPrice = price,
+                wasBuyout = false
+            )
+            cloudEventManager.sendEvent(eventData)
         }
     }
     
@@ -394,6 +449,16 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 
                 player.sendMessage(plugin.langManager.getMessage(player, "auction.auction_cancelled"))
                 plugin.logger.info("Successfully cancelled auction ID: $auctionId for player ${player.name}")
+                
+                // Send cloud event for auction cancellation
+                val eventData = AuctionEventData.createAuctionCancelledEvent(
+                    serverId = plugin.config.getString("cloud.server_id", "default-server")!!,
+                    auctionId = auctionId,
+                    sellerUuid = player.uniqueId.toString(),
+                    sellerName = player.name,
+                    reason = "cancelled_by_seller"
+                )
+                cloudEventManager.sendEvent(eventData)
                 
                 true
             } catch (e: Exception) {
@@ -508,6 +573,16 @@ class AuctionManager(private val plugin: Main, private val economy: Economy) {
                 
                 player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.bid_cancelled_success", "${ItemUtils.formatPriceWithCurrency(bidAmount, economy, plugin)}")}")
                 plugin.logger.info("Player ${player.name} cancelled bid of $bidAmount on auction $auctionId")
+                
+                // Send cloud event for bid cancellation
+                val eventData = AuctionEventData.createBidCancelledEvent(
+                    serverId = plugin.config.getString("cloud.server_id", "default-server")!!,
+                    auctionId = auctionId,
+                    bidderUuid = player.uniqueId.toString(),
+                    bidderName = player.name,
+                    refundAmount = bidAmount
+                )
+                cloudEventManager.sendEvent(eventData)
                 
                 true
             } catch (e: Exception) {

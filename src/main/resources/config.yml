@@ -89,3 +89,59 @@ debug:
   # Enable debug commands (testdata, etc.)
   # WARNING: Only enable in development/testing environments
   enable_debug_commands: false
+
+# Cloud Integration Settings
+cloud:
+  # Enable cloud event reporting
+  enabled: false
+  
+  # Cloudflare Workers base URL
+  base_url: "https://your-worker.your-subdomain.workers.dev"
+  
+  # API token for authentication (REQUIRED - obtain from cloud dashboard)
+  api_token: ""
+  
+  # Server identifier (used to distinguish multiple servers)
+  server_id: "default-server"
+  
+  # Authentication settings
+  auth:
+    # Auto-validate token on startup
+    validate_on_startup: true
+    
+    # Re-validate token interval (in minutes, 0 = disabled)
+    revalidate_interval: 60
+  
+  # Data synchronization settings
+  sync:
+    # Auto-sync existing data on first startup (when token is valid)
+    auto_sync_on_startup: true
+    
+    # Batch size for initial data sync (number of auctions per request)
+    batch_size: 50
+    
+    # Delay between batch requests in milliseconds
+    batch_delay: 1000
+    
+    # Sync existing bids along with auctions
+    include_bids: true
+    
+    # Force full resync (ignores last sync timestamp)
+    force_full_sync: false
+  
+  # HTTP request timeout in milliseconds
+  timeout: 5000
+  
+  # Number of retry attempts for failed requests
+  retry_attempts: 3
+  
+  # Delay between retry attempts in milliseconds
+  retry_delay: 1000
+  
+  # Events to send to cloud (can disable specific events)
+  events:
+    item_listed: true
+    bid_placed: true
+    bid_cancelled: true
+    auction_cancelled: true
+    item_sold: true

@@ -113,6 +113,76 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
                 plugin.bidHandler.handleConfirmCommand(sender)
             }
             
+            "cloud" -> {
+                if (!sender.hasPermission("auction.admin")) {
+                    plugin.langManager.sendErrorMessage(sender, "command.no_permission")
+                    return true
+                }
+                
+                when (args.getOrNull(1)?.lowercase()) {
+                    "sync" -> {
+                        val forceFullSync = args.getOrNull(2)?.lowercase() == "force"
+                        sender.sendMessage("§7Starting cloud sync${if (forceFullSync) " (forced full sync)" else ""}...")
+                        
+                        plugin.cloudEventManager.performManualSync(forceFullSync).thenAccept { result ->
+                            if (result.success) {
+                                sender.sendMessage("§aCloud sync completed: ${result.syncedAuctions} auctions, ${result.syncedBids} bids")
+                            } else {
+                                sender.sendMessage("§cCloud sync failed: ${result.errorMessage}")
+                            }
+                        }
+                    }
+                    "status" -> {
+                        sender.sendMessage("§7Cloud Status:")
+                        sender.sendMessage("§7- Enabled: ${plugin.cloudEventManager.isCloudEnabled()}")
+                        sender.sendMessage("§7- Token Valid: ${plugin.cloudEventManager.isTokenValid()}")
+                        sender.sendMessage("§7- Queue Size: ${plugin.cloudEventManager.getQueueSize()}")
+                        sender.sendMessage("§7- ${plugin.cloudEventManager.getSyncStatus()}")
+                    }
+                    "validate" -> {
+                        sender.sendMessage("§7Validating cloud token...")
+                        plugin.cloudEventManager.forceTokenValidation().thenAccept { valid ->
+                            if (valid) {
+                                sender.sendMessage("§aToken validation successful")
+                            } else {
+                                sender.sendMessage("§cToken validation failed")
+                            }
+                        }
+                    }
+                    "gettoken" -> {
+                        sender.sendMessage("§7Cloud Token Management URL:")
+                        sender.sendMessage("§b§nhttps://best-auction-cloud.masafumi-t.workers.dev/")
+                        sender.sendMessage("§7Click the link above to get your cloud token")
+                    }
+                    "settoken" -> {
+                        if (args.size < 3) {
+                            sender.sendMessage("§cUsage: /auction cloud settoken <token>")
+                            return true
+                        }
+                        val token = args[2]
+                        plugin.config.set("cloud.api-token", token)
+                        plugin.saveConfig()
+                        sender.sendMessage("§7Validating new token...")
+                        plugin.cloudEventManager.updateToken(token)
+                        plugin.cloudEventManager.forceTokenValidation().thenAccept { valid ->
+                            if (valid) {
+                                sender.sendMessage("§aToken set and validated successfully!")
+                            } else {
+                                sender.sendMessage("§cToken set but validation failed. Please check the token.")
+                            }
+                        }
+                    }
+                    else -> {
+                        sender.sendMessage("§7Cloud commands:")
+                        sender.sendMessage("§7- /auction cloud sync [force] - Sync data to cloud")
+                        sender.sendMessage("§7- /auction cloud status - Show cloud status")
+                        sender.sendMessage("§7- /auction cloud validate - Validate API token")
+                        sender.sendMessage("§7- /auction cloud gettoken - Get token management URL")
+                        sender.sendMessage("§7- /auction cloud settoken <token> - Set cloud API token")
+                    }
+                }
+            }
+            
             "testdata" -> {
                 // Check if debug commands are enabled
                 if (!plugin.config.getBoolean("debug.enable_debug_commands", false)) {
@@ -144,11 +214,24 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String>? {
         if (args.size == 1) {
             val commands = mutableListOf("sell", "bid", "cancel", "search", "mail", "language", "confirm", "help")
-            if (sender.hasPermission("auction.admin") && plugin.config.getBoolean("debug.enable_debug_commands", false)) {
-                commands.add("testdata")
+            if (sender.hasPermission("auction.admin")) {
+                commands.add("cloud")
+                if (plugin.config.getBoolean("debug.enable_debug_commands", false)) {
+                    commands.add("testdata")
+                }
             }
             return commands.filter { it.startsWith(args[0].lowercase()) }
         }
+        
+        if (args.size == 2 && args[0].lowercase() == "cloud") {
+            val cloudCommands = listOf("sync", "status", "validate", "gettoken", "settoken")
+            return cloudCommands.filter { it.startsWith(args[1].lowercase()) }
+        }
+        
+        if (args.size == 3 && args[0].lowercase() == "cloud" && args[1].lowercase() == "sync") {
+            return listOf("force").filter { it.startsWith(args[2].lowercase()) }
+        }
+        
         return emptyList()
     }
 

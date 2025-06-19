@@ -5,6 +5,7 @@ import com.hacklab.best_auction.database.DatabaseManager
 import com.hacklab.best_auction.handlers.BidHandler
 import com.hacklab.best_auction.handlers.SearchHandler
 import com.hacklab.best_auction.managers.AuctionManager
+import com.hacklab.best_auction.managers.CloudEventManager
 import com.hacklab.best_auction.managers.MailManager
 import com.hacklab.best_auction.tasks.ExpirationTask
 import com.hacklab.best_auction.ui.AuctionUI
@@ -23,6 +24,7 @@ class Main : JavaPlugin() {
     private lateinit var economy: Economy
     lateinit var auctionManager: AuctionManager
     lateinit var mailManager: MailManager
+    lateinit var cloudEventManager: CloudEventManager
     lateinit var bidHandler: BidHandler
     lateinit var searchHandler: SearchHandler
     private lateinit var databaseManager: DatabaseManager
@@ -47,7 +49,8 @@ class Main : JavaPlugin() {
         databaseManager.init()
 
         mailManager = MailManager(this)
-        auctionManager = AuctionManager(this, economy)
+        cloudEventManager = CloudEventManager(this)
+        auctionManager = AuctionManager(this, economy, cloudEventManager)
         bidHandler = BidHandler(this)
         searchHandler = SearchHandler(this)
 
@@ -64,6 +67,9 @@ class Main : JavaPlugin() {
     }
 
     override fun onDisable() {
+        if (::cloudEventManager.isInitialized) {
+            cloudEventManager.shutdown()
+        }
         logger.info(langManager.getMessage("general.disabled"))
     }
 

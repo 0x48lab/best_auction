@@ -16,7 +16,7 @@ class DatabaseManager(private val dataFolder: File) {
         Database.connect("jdbc:sqlite:${dbFile.absolutePath}", "org.sqlite.JDBC")
         
         transaction {
-            SchemaUtils.create(AuctionItems, Bids, MailBox, AuctionSettings, PlayerLanguageSettings)
+            SchemaUtils.create(AuctionItems, Bids, MailBox, AuctionSettings, PlayerLanguageSettings, CloudSyncStatus)
         }
     }
 }
