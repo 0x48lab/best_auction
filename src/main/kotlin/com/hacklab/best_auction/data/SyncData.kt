@@ -20,7 +20,13 @@ data class AuctionSyncData(
     val expiresAt: String,
     val isActive: Boolean,
     val isSold: Boolean,
-    val bids: List<BidSyncData> = emptyList()
+    val bids: List<BidSyncData> = emptyList(),
+    // New item detail fields
+    val itemLore: List<String>? = null,
+    val itemEnchantments: Map<String, Int>? = null,
+    val itemData: String? = null, // Base64 serialized ItemStack
+    val itemDurability: Int? = null,
+    val itemCustomModelData: Int? = null
 )
 
 data class BidSyncData(

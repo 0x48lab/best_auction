@@ -461,7 +461,13 @@ class CloudEventManager(private val plugin: Main) {
                             expiresAt = auctionRow[AuctionItems.expiresAt].format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                             isActive = auctionRow[AuctionItems.isActive],
                             isSold = auctionRow[AuctionItems.isSold],
-                            bids = bids
+                            bids = bids,
+                            // Add item detail fields
+                            itemLore = item?.itemMeta?.lore,
+                            itemEnchantments = item?.itemMeta?.enchants?.mapKeys { it.key.key.toString() }?.mapValues { it.value },
+                            itemData = if (item != null) ItemUtils.serializeItemStack(item) else null,
+                            itemDurability = if (item?.type?.maxDurability != 0.toShort()) item?.durability?.toInt() else null,
+                            itemCustomModelData = item?.itemMeta?.customModelData
                         )
                     } catch (e: Exception) {
                         plugin.logger.warning("Failed to process auction ${auctionRow[AuctionItems.id]}: ${e.message}")
