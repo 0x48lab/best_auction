@@ -19,13 +19,13 @@ import kotlin.random.Random
 class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
-        if (sender !is Player) {
-            sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
-            return true
-        }
-
         when (args.getOrNull(0)?.lowercase()) {
             "sell", "list" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 if (args.size < 2) {
                     plugin.langManager.sendErrorMessage(sender, "command.insufficient_args")
                     return true
@@ -47,10 +47,20 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
             }
             
             "gui", "open", null -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 AuctionUI.openMainUI(sender, plugin)
             }
             
             "bid" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 if (args.size < 3) {
                     plugin.langManager.sendErrorMessage(sender, "command.insufficient_args")
                     return true
@@ -68,6 +78,11 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
             }
             
             "cancel" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 if (args.size < 2) {
                     plugin.langManager.sendErrorMessage(sender, "command.insufficient_args")
                     return true
@@ -83,6 +98,11 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
             }
             
             "mail", "mailbox" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 if (args.size >= 3 && args[1].equals("collect", ignoreCase = true)) {
                     val mailId = args[2].toIntOrNull()
                     if (mailId != null) {
@@ -96,6 +116,11 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
             }
             
             "search" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 if (args.size < 2) {
                     plugin.langManager.sendErrorMessage(sender, "command.insufficient_args")
                     return true
@@ -106,95 +131,104 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
             }
             
             "language", "lang" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 LanguageSettingsUI.openLanguageSettings(sender, plugin)
             }
             
             "confirm" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 plugin.bidHandler.handleConfirmCommand(sender)
             }
             
             "cloud" -> {
                 if (!sender.hasPermission("auction.admin")) {
-                    plugin.langManager.sendErrorMessage(sender, "command.no_permission")
+                    if (sender is Player) {
+                        plugin.langManager.sendErrorMessage(sender, "command.no_permission")
+                    } else {
+                        sender.sendMessage("§cYou don't have permission to use this command.")
+                    }
                     return true
                 }
                 
                 when (args.getOrNull(1)?.lowercase()) {
                     "sync" -> {
                         val forceFullSync = args.getOrNull(2)?.lowercase() == "force"
-                        val messageKey = if (forceFullSync) "cloud.sync_starting_forced" else "cloud.sync_starting"
-                        plugin.langManager.sendInfoMessage(sender, messageKey)
+                        val message = if (forceFullSync) "§eForcing full cloud synchronization..." else "§eStarting cloud synchronization..."
+                        sender.sendMessage(message)
                         
                         plugin.cloudEventManager.performManualSync(forceFullSync).thenAccept { result ->
                             if (result.success) {
-                                val message = plugin.langManager.getMessage(sender, "cloud.sync_completed", result.syncedAuctions.toString(), result.syncedBids.toString())
-                                sender.sendMessage("§a$message")
+                                sender.sendMessage("§aCloud sync completed! Synced ${result.syncedAuctions} auctions and ${result.syncedBids} bids.")
                             } else {
-                                val message = plugin.langManager.getMessage(sender, "cloud.sync_failed", result.errorMessage ?: "Unknown error")
-                                sender.sendMessage("§c$message")
+                                sender.sendMessage("§cCloud sync failed: ${result.errorMessage ?: "Unknown error"}")
                             }
                         }
                     }
                     "status" -> {
-                        plugin.langManager.sendInfoMessage(sender, "cloud.status_header")
-                        val enabledMsg = plugin.langManager.getMessage(sender, "cloud.status_enabled", plugin.cloudEventManager.isCloudEnabled().toString())
-                        val tokenValidMsg = plugin.langManager.getMessage(sender, "cloud.status_token_valid", plugin.cloudEventManager.isTokenValid().toString())
-                        val queueSizeMsg = plugin.langManager.getMessage(sender, "cloud.status_queue_size", plugin.cloudEventManager.getQueueSize().toString())
-                        sender.sendMessage("§7$enabledMsg")
-                        sender.sendMessage("§7$tokenValidMsg")
-                        sender.sendMessage("§7$queueSizeMsg")
-                        sender.sendMessage("§7- ${plugin.cloudEventManager.getSyncStatus()}")
+                        sender.sendMessage("§e=== Cloud Status ===")
+                        sender.sendMessage("§7Enabled: ${plugin.cloudEventManager.isCloudEnabled()}")
+                        sender.sendMessage("§7Token Valid: ${plugin.cloudEventManager.isTokenValid()}")
+                        sender.sendMessage("§7Queue Size: ${plugin.cloudEventManager.getQueueSize()}")
+                        sender.sendMessage("§7Status: ${plugin.cloudEventManager.getSyncStatus()}")
                     }
                     "validate" -> {
-                        plugin.langManager.sendInfoMessage(sender, "cloud.validating_token")
+                        sender.sendMessage("§eValidating cloud token...")
                         plugin.cloudEventManager.forceTokenValidation().thenAccept { valid ->
                             if (valid) {
-                                plugin.langManager.sendSuccessMessage(sender, "cloud.token_validation_success")
+                                sender.sendMessage("§aToken validation successful!")
                             } else {
-                                plugin.langManager.sendErrorMessage(sender, "cloud.token_validation_failed")
+                                sender.sendMessage("§cToken validation failed!")
                             }
                         }
                     }
                     "gettoken" -> {
-                        plugin.langManager.sendInfoMessage(sender, "cloud.token_url_header")
+                        sender.sendMessage("§e=== Get Cloud Token ===")
                         sender.sendMessage("§b§nhttps://best-auction-cloud.masafumi-t.workers.dev/")
-                        plugin.langManager.sendInfoMessage(sender, "cloud.token_url_instruction")
+                        sender.sendMessage("§7Visit the URL above to get your API token.")
                     }
                     "settoken" -> {
                         if (args.size < 3) {
-                            plugin.langManager.sendErrorMessage(sender, "cloud.settoken_usage")
+                            sender.sendMessage("§cUsage: /auction cloud settoken <token>")
                             return true
                         }
                         val token = args[2]
                         plugin.config.set("cloud.api-token", token)
                         plugin.saveConfig()
-                        plugin.langManager.sendInfoMessage(sender, "cloud.token_set_validating")
+                        sender.sendMessage("§eToken set. Validating...")
                         plugin.cloudEventManager.updateToken(token)
                         plugin.cloudEventManager.forceTokenValidation().thenAccept { valid ->
                             if (valid) {
-                                plugin.langManager.sendSuccessMessage(sender, "cloud.token_set_success")
+                                sender.sendMessage("§aToken set and validated successfully!")
                             } else {
-                                plugin.langManager.sendErrorMessage(sender, "cloud.token_set_failed")
+                                sender.sendMessage("§cToken set but validation failed!")
                             }
                         }
                     }
                     else -> {
-                        plugin.langManager.sendInfoMessage(sender, "cloud.commands_header")
-                        val syncMsg = plugin.langManager.getMessage(sender, "cloud.command_sync")
-                        val statusMsg = plugin.langManager.getMessage(sender, "cloud.command_status")
-                        val validateMsg = plugin.langManager.getMessage(sender, "cloud.command_validate")
-                        val gettokenMsg = plugin.langManager.getMessage(sender, "cloud.command_gettoken")
-                        val settokenMsg = plugin.langManager.getMessage(sender, "cloud.command_settoken")
-                        sender.sendMessage("§7$syncMsg")
-                        sender.sendMessage("§7$statusMsg")
-                        sender.sendMessage("§7$validateMsg")
-                        sender.sendMessage("§7$gettokenMsg")
-                        sender.sendMessage("§7$settokenMsg")
+                        sender.sendMessage("§e=== Cloud Commands ===")
+                        sender.sendMessage("§7/auction cloud sync [force] - Synchronize auction data")
+                        sender.sendMessage("§7/auction cloud status - Show cloud status")
+                        sender.sendMessage("§7/auction cloud validate - Validate API token")
+                        sender.sendMessage("§7/auction cloud gettoken - Get token URL")
+                        sender.sendMessage("§7/auction cloud settoken <token> - Set API token")
                     }
                 }
             }
             
             "testdata" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+                
                 // Check if debug commands are enabled
                 if (!plugin.config.getBoolean("debug.enable_debug_commands", false)) {
                     plugin.langManager.sendErrorMessage(sender, "general.debug_commands_disabled")
@@ -211,11 +245,19 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
             }
             
             "help" -> {
-                sendHelpMessage(sender, label)
+                if (sender !is Player) {
+                    sendHelpMessageConsole(sender, label)
+                } else {
+                    sendHelpMessage(sender, label)
+                }
             }
             
             else -> {
-                sendHelpMessage(sender, label)
+                if (sender !is Player) {
+                    sendHelpMessageConsole(sender, label)
+                } else {
+                    sendHelpMessage(sender, label)
+                }
             }
         }
         
@@ -258,8 +300,21 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
         player.sendMessage("§e/$label language §7- Change language settings")
         player.sendMessage("§e/$label help §7${plugin.langManager.getMessage(player, "command.help_help")}")
         if (player.hasPermission("auction.admin")) {
+            player.sendMessage("§e/$label cloud §7- Cloud synchronization management")
             player.sendMessage("§e/$label testdata [count] §7- Generate test auction data")
         }
+    }
+    
+    private fun sendHelpMessageConsole(sender: CommandSender, label: String) {
+        sender.sendMessage("§6=== Best Auction Help (Console) ===")
+        sender.sendMessage("§e/$label cloud §7- Cloud synchronization management")
+        sender.sendMessage("§7  /$label cloud sync [force] - Synchronize auction data")
+        sender.sendMessage("§7  /$label cloud status - Show cloud status")
+        sender.sendMessage("§7  /$label cloud validate - Validate API token")
+        sender.sendMessage("§7  /$label cloud gettoken - Get token URL")
+        sender.sendMessage("§7  /$label cloud settoken <token> - Set API token")
+        sender.sendMessage("§e/$label help §7- Show this help message")
+        sender.sendMessage("§7Note: Most auction commands require a player and cannot be used from console.")
     }
     
     private fun generateTestData(player: Player, count: Int) {
