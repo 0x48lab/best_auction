@@ -11,6 +11,7 @@ gradle-app.setting
 *.iws
 *.ipr
 out/
+bin/
 
 # OS
 .DS_Store
