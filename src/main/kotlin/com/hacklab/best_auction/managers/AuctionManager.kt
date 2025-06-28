@@ -15,6 +15,7 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class AuctionManager(private val plugin: Main, private val economy: Economy, private val cloudEventManager: CloudEventManager) {
@@ -58,9 +59,10 @@ class AuctionManager(private val plugin: Main, private val economy: Economy, pri
         }
         
         val processedItem = item.clone()
-        val category = AuctionCategory.fromMaterial(item.type)
+        val category = AuctionCategory.fromItemStack(item, plugin)
         val durationHours = plugin.config.getInt("auction.default_duration", 228)
-        val expiresAt = LocalDateTime.now().plusHours(durationHours.toLong())
+        val createdAt = LocalDateTime.now()
+        val expiresAt = createdAt.plusHours(durationHours.toLong())
         
         plugin.logger.info("Listing item: ${item.type.name} -> Category: ${category.name}")
         if (item.itemMeta?.hasDisplayName() == true) {
@@ -81,6 +83,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy, pri
                     it[AuctionItems.currentPrice] = startPrice
                     it[AuctionItems.category] = category.name
                     it[AuctionItems.listingFee] = fee
+                    it[AuctionItems.createdAt] = createdAt
                     it[AuctionItems.expiresAt] = expiresAt
                     it[AuctionItems.quantity] = item.amount
                 } get AuctionItems.id
@@ -101,7 +104,9 @@ class AuctionManager(private val plugin: Main, private val economy: Economy, pri
                         itemType = processedItem.type.name,
                         quantity = processedItem.amount,
                         startPrice = startPrice,
-                        buyoutPrice = buyoutPrice
+                        buyoutPrice = buyoutPrice,
+                        createdAt = createdAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        expiresAt = expiresAt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                     )
                     cloudEventManager.sendEvent(eventData)
                     

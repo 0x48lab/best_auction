@@ -18,12 +18,6 @@ auction:
   # Default auction duration in hours (current: 9 days 12 hours = 228 hours)
   default_duration: 228
   
-  # Maximum auction duration in hours
-  max_duration: 336  # 14 days
-  
-  # Minimum auction duration in hours
-  min_duration: 1
-  
   # Listing fee percentage (0.05 = 5%)
   listing_fee_rate: 0.05
   

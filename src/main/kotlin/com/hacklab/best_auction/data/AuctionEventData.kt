@@ -32,7 +32,9 @@ data class AuctionEventData(
             itemType: String,
             quantity: Int,
             startPrice: Long,
-            buyoutPrice: Long?
+            buyoutPrice: Long?,
+            createdAt: String,
+            expiresAt: String
         ): AuctionEventData {
             val data = mutableMapOf<String, Any>(
                 "seller_uuid" to sellerUuid,
@@ -40,7 +42,9 @@ data class AuctionEventData(
                 "item_name" to itemName,
                 "item_type" to itemType,
                 "quantity" to quantity,
-                "start_price" to startPrice
+                "start_price" to startPrice,
+                "created_at" to createdAt,
+                "expires_at" to expiresAt
             )
             if (buyoutPrice != null) {
                 data["buyout_price"] = buyoutPrice

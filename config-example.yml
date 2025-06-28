@@ -9,12 +9,6 @@ auction:
   # デフォルトオークション期間（時間単位）
   default_duration: 168  # 7日間
   
-  # 最大オークション期間（時間単位）
-  max_duration: 336  # 14日間
-  
-  # 最小オークション期間（時間単位）
-  min_duration: 1  # 1時間
-  
   # 出品手数料率（0.05 = 5%）
   listing_fee_rate: 0.05
   

@@ -175,6 +175,7 @@ category:
   redstone: "Redstone"
   transportation: "Transportation"
   brewing: "Brewing"
+  enchanted_books: "Enchanted Books"
 
 # General
 general:

@@ -155,6 +155,7 @@ class AuctionUI : Listener {
                 AuctionCategory.TOOLS -> plugin.langManager.getMessage(player, "category.tools")
                 AuctionCategory.COMBAT -> plugin.langManager.getMessage(player, "category.weapons")
                 AuctionCategory.BREWING -> plugin.langManager.getMessage(player, "category.brewing")
+                AuctionCategory.ENCHANTED_BOOKS -> plugin.langManager.getMessage(player, "category.enchanted_books")
             }
         }
         
