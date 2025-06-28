@@ -70,3 +70,35 @@ Best Auctionは、Minecraft Paper/Spigotサーバー用のオークションハ�
 - 多言語メッセージは`LangManager`経由で取得
 - 経済システムはVault APIを通じてアクセス
 - UIはMinecraftのインベントリGUIシステムを使用
+
+## 多言語対応の重要ルール
+
+**重要**: このプラグインは子供が使用することを想定しています。そのため、以下のルールを厳守してください：
+
+1. **すべてのユーザー向けメッセージは多言語対応必須**
+   - ハードコードされた英語メッセージは禁止
+   - 必ず`LangManager`を通じてメッセージを取得
+   - 新しいメッセージは必ず`en.yml`と`ja.yml`の両方に追加
+
+2. **日本語設定時の完全な日本語化**
+   - config.ymlで`language: "ja"`が設定されている場合
+   - すべてのメッセージ、UI、エラー、通知は日本語で表示
+   - 英語が混在することは許可されない
+
+3. **メッセージ追加時の手順**
+   ```kotlin
+   // 悪い例 - ハードコードされたメッセージ
+   sender.sendMessage("§aCloud sync completed!")
+   
+   // 良い例 - LangManagerを使用
+   plugin.langManager.sendMessage(sender, "cloud.sync.completed")
+   ```
+
+4. **言語ファイルの構造**
+   - `src/main/resources/lang/en.yml` - 英語メッセージ
+   - `src/main/resources/lang/ja.yml` - 日本語メッセージ
+   - 両ファイルは同じキー構造を維持
+
+5. **デバッグメッセージの例外**
+   - ログ出力（`plugin.logger`）は英語でOK
+   - ただし、ユーザーに表示されるものは多言語対応必須

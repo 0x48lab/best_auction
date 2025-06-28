@@ -2,6 +2,7 @@ package com.hacklab.best_auction.data
 
 import com.google.gson.Gson
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 data class AuctionSyncData(
@@ -56,7 +57,7 @@ data class BatchSyncRequest(
             return BatchSyncRequest(
                 serverId = serverId,
                 syncType = syncType,
-                timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
                 auctions = auctions
             )
         }

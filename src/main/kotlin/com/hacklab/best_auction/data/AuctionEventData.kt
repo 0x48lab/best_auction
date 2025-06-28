@@ -1,7 +1,7 @@
 package com.hacklab.best_auction.data
 
 import com.google.gson.Gson
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -49,7 +49,7 @@ data class AuctionEventData(
             return AuctionEventData(
                 eventType = AuctionEventType.ITEM_LISTED,
                 serverId = serverId,
-                timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
                 auctionId = auctionId,
                 data = data
             )
@@ -73,7 +73,7 @@ data class AuctionEventData(
             return AuctionEventData(
                 eventType = AuctionEventType.BID_PLACED,
                 serverId = serverId,
-                timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
                 auctionId = auctionId,
                 data = data
             )
@@ -95,7 +95,7 @@ data class AuctionEventData(
             return AuctionEventData(
                 eventType = AuctionEventType.BID_CANCELLED,
                 serverId = serverId,
-                timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
                 auctionId = auctionId,
                 data = data
             )
@@ -117,7 +117,7 @@ data class AuctionEventData(
             return AuctionEventData(
                 eventType = AuctionEventType.AUCTION_CANCELLED,
                 serverId = serverId,
-                timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
                 auctionId = auctionId,
                 data = data
             )
@@ -145,7 +145,7 @@ data class AuctionEventData(
             return AuctionEventData(
                 eventType = AuctionEventType.ITEM_SOLD,
                 serverId = serverId,
-                timestamp = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT),
                 auctionId = auctionId,
                 data = data
             )

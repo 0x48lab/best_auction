@@ -1,0 +1,139 @@
+# Best Auction プラグイン設定ファイルサンプル
+# このファイルをconfig.ymlとしてコピーして使用してください
+
+# 言語設定（ja: 日本語, en: 英語）
+language: "ja"
+
+# オークション設定
+auction:
+  # デフォルトオークション期間（時間単位）
+  default_duration: 168  # 7日間
+  
+  # 最大オークション期間（時間単位）
+  max_duration: 336  # 14日間
+  
+  # 最小オークション期間（時間単位）
+  min_duration: 1  # 1時間
+  
+  # 出品手数料率（0.05 = 5%）
+  listing_fee_rate: 0.05
+  
+  # 出品手数料の最小額
+  min_listing_fee: 10
+  
+  # 出品手数料の最大額
+  max_listing_fee: 10000
+  
+  # 最低入札価格
+  min_price: 1
+  
+  # 最高入札価格
+  max_price: 1000000000
+  
+  # プレイヤーが同時に出品できる最大数
+  max_player_listings: 7
+
+# 通貨設定
+currency:
+  # Vaultを使用した通貨フォーマット（推奨）
+  use_vault_format: true
+  
+  # Vaultが利用できない場合の代替通貨名
+  fallback_currency: "gil"
+  
+  # 通貨記号（use_vault_formatがfalseの場合に使用）
+  currency_symbol: ""
+
+# UI設定
+ui:
+  # オークションハウスの1ページあたりのアイテム数
+  items_per_page: 45
+  
+  # 検索結果の最大表示数
+  max_search_results: 100
+  
+  # 日付フォーマット
+  # 例: "yyyy-MM-dd", "MM/dd/yyyy", "dd/MM/yyyy", "yyyy年MM月dd日"
+  date_format: "yyyy年MM月dd日"
+
+# メール設定
+mail:
+  # プレイヤーごとの最大メール保存数
+  max_mail_per_player: 50
+  
+  # メール自動削除までの日数（0 = 削除しない）
+  auto_delete_days: 30
+
+# 権限設定
+permissions:
+  # オークションハウス使用に権限を必要とするか
+  require_permission: false
+  
+  # 基本権限ノード
+  base_permission: "bestauction.use"
+
+# デバッグ設定
+debug:
+  # デバッグコマンドを有効化（開発/テスト環境のみ）
+  # 警告: 本番環境では必ずfalseにしてください
+  enable_debug_commands: false
+
+# =========================================
+# クラウド連携設定（オプション）
+# =========================================
+cloud:
+  # クラウド連携を有効化
+  enabled: false  # trueに変更して有効化
+  
+  # Cloudflare WorkersのベースURL
+  # 例: https://best-auction.your-username.workers.dev
+  base_url: "https://your-worker.your-subdomain.workers.dev"
+  
+  # APIトークン（必須 - クラウドダッシュボードから取得）
+  # コンソールで「ah cloud gettoken」を実行して取得方法を確認
+  api_token: ""
+  
+  # サーバー識別子（複数サーバーを区別するため）
+  server_id: "server-1"
+  
+  # 認証設定
+  auth:
+    # 起動時に自動でトークンを検証
+    validate_on_startup: true
+    
+    # トークン再検証間隔（分、0 = 無効）
+    revalidate_interval: 60
+  
+  # データ同期設定
+  sync:
+    # 初回起動時に既存データを自動同期（トークンが有効な場合）
+    auto_sync_on_startup: true
+    
+    # 初期データ同期のバッチサイズ（リクエストごとのオークション数）
+    batch_size: 50
+    
+    # バッチリクエスト間の遅延（ミリ秒）
+    batch_delay: 1000
+    
+    # オークションと一緒に入札情報も同期
+    include_bids: true
+    
+    # 強制的にフル再同期（最終同期タイムスタンプを無視）
+    force_full_sync: false
+  
+  # HTTPリクエストタイムアウト（ミリ秒）
+  timeout: 5000
+  
+  # 失敗したリクエストのリトライ回数
+  retry_attempts: 3
+  
+  # リトライ間の遅延（ミリ秒）
+  retry_delay: 1000
+  
+  # クラウドに送信するイベント（特定のイベントを無効化可能）
+  events:
+    item_listed: true      # アイテム出品時
+    bid_placed: true       # 入札時
+    bid_cancelled: true    # 入札キャンセル時
+    auction_cancelled: true # オークションキャンセル時
+    item_sold: true        # アイテム落札時

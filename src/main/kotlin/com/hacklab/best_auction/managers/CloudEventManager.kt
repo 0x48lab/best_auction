@@ -59,14 +59,21 @@ class CloudEventManager(private val plugin: Main) {
         get() = plugin.config.getLong("cloud.retry_delay", 1000)
     
     init {
+        plugin.logger.info("[CloudEvent] Initializing Cloud Event Manager")
+        plugin.logger.info("[CloudEvent] Cloud enabled: $isEnabled")
+        plugin.logger.info("[CloudEvent] Base URL: $baseUrl")
+        plugin.logger.info("[CloudEvent] API Token configured: ${apiToken.isNotBlank()}")
+        
         httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofMillis(timeout))
             .build()
         
         // Validate token on startup if enabled
         if (isEnabled && plugin.config.getBoolean("cloud.auth.validate_on_startup", true)) {
+            plugin.logger.info("[CloudEvent] Validating API token on startup...")
             validateToken().thenAccept { valid ->
                 if (valid && plugin.config.getBoolean("cloud.sync.auto_sync_on_startup", true)) {
+                    plugin.logger.info("[CloudEvent] Starting initial data sync...")
                     // Start initial data sync if token is valid
                     performInitialSync()
                 }
@@ -84,23 +91,29 @@ class CloudEventManager(private val plugin: Main) {
     }
     
     fun sendEvent(eventData: AuctionEventData) {
+        plugin.logger.info("[CloudEvent] Attempting to send event: ${eventData.eventType} for auction ${eventData.auctionId}")
+        
         if (!isEnabled) {
-            plugin.logger.fine("Cloud integration disabled, skipping event: ${eventData.eventType}")
+            plugin.logger.info("[CloudEvent] Cloud integration is disabled in config")
             return
         }
         
         if (baseUrl.isBlank()) {
-            plugin.logger.warning("Cloud base URL not configured")
+            plugin.logger.warning("[CloudEvent] Cloud base URL not configured (cloud.base_url is empty)")
             return
         }
         
         if (apiToken.isBlank()) {
-            plugin.logger.warning("Cloud API token not configured")
+            plugin.logger.warning("[CloudEvent] Cloud API token not configured (cloud.api_token is empty)")
             return
         }
         
+        plugin.logger.info("[CloudEvent] Using base URL: $baseUrl")
+        plugin.logger.info("[CloudEvent] Events endpoint: $eventsEndpoint")
+        plugin.logger.info("[CloudEvent] Token validation status: $isTokenValid")
+        
         if (!isTokenValid) {
-            plugin.logger.warning("Cloud API token is not valid, skipping event: ${eventData.eventType}")
+            plugin.logger.warning("[CloudEvent] Cloud API token is not valid, skipping event: ${eventData.eventType}")
             return
         }
         
@@ -120,7 +133,7 @@ class CloudEventManager(private val plugin: Main) {
         
         // Add to queue for background processing
         eventQueue.offer(eventData)
-        plugin.logger.fine("Queued cloud event: ${eventData.eventType} for auction ${eventData.auctionId}")
+        plugin.logger.info("[CloudEvent] Queued cloud event: ${eventData.eventType} for auction ${eventData.auctionId}, queue size: ${eventQueue.size}")
     }
     
     private fun startEventProcessor() {
@@ -145,9 +158,9 @@ class CloudEventManager(private val plugin: Main) {
                     .whenComplete { success, throwable ->
                         isProcessing = false
                         if (success) {
-                            plugin.logger.fine("Successfully sent cloud event: ${event.eventType}")
+                            plugin.logger.info("[CloudEvent] Successfully sent event: ${event.eventType}")
                         } else {
-                            plugin.logger.warning("Failed to send cloud event after all retries: ${event.eventType}")
+                            plugin.logger.warning("[CloudEvent] Failed to send event after all retries: ${event.eventType}")
                             if (throwable != null) {
                                 plugin.logger.warning("Error: ${throwable.message}")
                             }
@@ -197,14 +210,18 @@ class CloudEventManager(private val plugin: Main) {
             
             val request = requestBuilder.build()
             
+            plugin.logger.info("[CloudEvent] Sending HTTP request to: $eventsEndpoint")
+            plugin.logger.info("[CloudEvent] Request body: ${eventData.toJson()}")
+            
             httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply { response ->
                     val statusCode = response.statusCode()
                     if (statusCode in 200..299) {
-                        plugin.logger.fine("Cloud event sent successfully: ${eventData.eventType}, status: $statusCode")
+                        plugin.logger.info("[CloudEvent] Event sent successfully: ${eventData.eventType}, status: $statusCode")
                         true
                     } else {
-                        plugin.logger.warning("Cloud event failed: ${eventData.eventType}, status: $statusCode, body: ${response.body()}")
+                        plugin.logger.warning("[CloudEvent] Event failed: ${eventData.eventType}, status: $statusCode")
+                        plugin.logger.warning("[CloudEvent] Response body: ${response.body()}")
                         false
                     }
                 }

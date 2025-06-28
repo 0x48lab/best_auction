@@ -17,6 +17,7 @@
 - ⏰ **残り時間表示** - リアルタイムでオークション終了時間を表示
 - ⚙️ **高度な設定** - 手数料、期間、通貨表示など細かく調整可能
 - 📊 **K/M/B表記** - 大きな金額の見やすい表示
+- ☁️ **クラウド連携** - オークションデータの外部同期とイベント送信
 
 ## 🛠️ 必要要件
 
@@ -61,7 +62,72 @@ ui:
   date_format: "yyyy年MM月dd日"  # 日付表示形式
   
 language: "ja"               # 言語設定
+
+# クラウド連携（オプション）
+cloud:
+  enabled: false
+  base_url: "https://your-worker.your-subdomain.workers.dev"
+  api_token: ""
+  server_id: "default-server"
 ```
+
+## ☁️ クラウド連携
+
+Best Auctionは、オークションデータを外部クラウドサービスと同期する機能を提供します。これにより、複数サーバー間でのデータ共有、分析、バックアップが可能になります。
+
+### クラウド連携機能
+
+- **リアルタイムイベント送信** - 出品、入札、落札などのイベントを即座に送信
+- **データ同期** - オークションデータの定期的な同期
+- **APIトークン認証** - セキュアな認証機構
+- **自動リトライ** - 失敗時の自動再送信
+
+### イベントタイプ
+
+1. **ITEM_LISTED** - アイテムが出品された時
+2. **BID_PLACED** - 入札が行われた時
+3. **BID_CANCELLED** - 入札がキャンセルされた時
+4. **AUCTION_CANCELLED** - オークションがキャンセルされた時
+5. **ITEM_SOLD** - アイテムが落札された時
+
+### データフォーマット
+
+クラウドに送信されるイベントはJSON形式で、ISO 8601形式のタイムスタンプ（UTC）を含みます：
+
+```json
+{
+  "event_type": "ITEM_LISTED",
+  "server_id": "server-1",
+  "timestamp": "2025-06-28T14:30:45.123Z",
+  "auction_id": 123,
+  "data": {
+    "seller_uuid": "uuid-here",
+    "seller_name": "PlayerName",
+    "item_name": "Diamond Sword",
+    "item_type": "DIAMOND_SWORD",
+    "quantity": 1,
+    "start_price": 1000,
+    "buyout_price": 5000
+  }
+}
+```
+
+### クラウドコマンド
+
+```
+/ah cloud status       # クラウド連携の状態を表示
+/ah cloud validate     # APIトークンの検証
+/ah cloud sync [force] # 手動でデータを同期
+```
+
+### セットアップ
+
+1. クラウドサービス（Cloudflare Workers等）をデプロイ
+2. APIトークンを取得
+3. `config.yml`でクラウド設定を有効化
+4. サーバーを再起動
+
+詳細な設定手順は[CLOUD_SETUP_GUIDE.md](CLOUD_SETUP_GUIDE.md)を参照してください。
 
 ## 📚 ドキュメント
 

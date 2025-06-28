@@ -96,7 +96,7 @@ cloud:
   enabled: false
   
   # Cloudflare Workers base URL
-  base_url: "https://your-worker.your-subdomain.workers.dev"
+  base_url: "https://best-auction-cloud.masafumi-t.workers.dev"
   
   # API token for authentication (REQUIRED - obtain from cloud dashboard)
   api_token: ""
