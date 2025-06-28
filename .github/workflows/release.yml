@@ -184,7 +184,10 @@ jobs:
           
         # Additional metadata
         display-name: Best Auction v${{ steps.version.outputs.VERSION }}
-        relations:
-          vault:
-            type: optionalDependency
-            project-id: 1925
+        relations: |
+          [
+            {
+              "slug": "vault",
+              "type": "optional"
+            }
+          ]
