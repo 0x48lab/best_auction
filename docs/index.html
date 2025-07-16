@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Best Auction Documentation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="title-box">
+                <h1>⚔️ Best Auction 🛡️</h1>
+                <p class="subtitle" id="subtitle-text">Complete Documentation</p>
+            </div>
+            <nav>
+                <div class="nav-links">
+                    <a href="#overview" class="nav-btn" id="overview-link">Overview</a>
+                    <a href="#user-guide" class="nav-btn" id="user-link">User Guide</a>
+                    <a href="#admin-guide" class="nav-btn" id="admin-link">Admin Guide</a>
+                </div>
+                <div class="lang-switcher">
+                    <button onclick="switchLanguage('en')" class="lang-btn active" id="en-btn">English</button>
+                    <button onclick="switchLanguage('ja')" class="lang-btn" id="ja-btn">日本語</button>
+                </div>
+            </nav>
+        </header>
+        
+        <main>
+            <div id="content-en" class="content">
+                <!-- Overview Section -->
+                <section id="overview" class="section">
+                    <h2>🌟 Overview</h2>
+                    <div class="hero-section">
+                        <div class="hero-box">
+                            <h3>Welcome to Best Auction</h3>
+                            <p>A comprehensive auction house plugin for Minecraft servers</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h3>🎮 For Players</h3>
+                            <ul>
+                                <li>List items for auction or instant sale</li>
+                                <li>Bid on items from other players</li>
+                                <li>Search and filter by categories</li>
+                                <li>Receive items via mailbox system</li>
+                            </ul>
+                        </div>
+                        <div class="feature-card">
+                            <h3>🛠️ For Administrators</h3>
+                            <ul>
+                                <li>Cloud integration for web interface</li>
+                                <li>Detailed configuration options</li>
+                                <li>Performance monitoring</li>
+                                <li>Multi-server support</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- User Guide Section -->
+                <section id="user-guide" class="section">
+                    <h2>📚 User Guide</h2>
+                    
+                    <h3>📜 Basic Commands</h3>
+                    <div class="command-grid">
+                        <div class="command-card">
+                            <h4>Open Auction House</h4>
+                            <code>/auction</code> or <code>/ah</code>
+                            <p>Opens the main auction house GUI</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>Sell Item</h4>
+                            <code>/auction sell &lt;price&gt; [buyout]</code>
+                            <p>List item in your hand</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>Place Bid</h4>
+                            <code>/auction bid &lt;id&gt; &lt;amount&gt;</code>
+                            <p>Bid on an auction item</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>Cancel Listing</h4>
+                            <code>/auction cancel &lt;id&gt;</code>
+                            <p>Cancel your auction listing</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>Open Mailbox</h4>
+                            <code>/auction mail</code>
+                            <p>Receive items and refunds</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>Search Items</h4>
+                            <code>/auction search &lt;keyword&gt;</code>
+                            <p>Search for specific items</p>
+                        </div>
+                    </div>
+
+                    <h3>📤 How to List Items</h3>
+                    <div class="method-box">
+                        <h4>GUI Method</h4>
+                        <ol>
+                            <li>Open auction house with <code>/ah</code></li>
+                            <li>Click the emerald block at bottom center</li>
+                            <li>Place item in the empty slot</li>
+                            <li>Enter starting price in chat</li>
+                            <li>Optionally enter buyout price</li>
+                            <li>Confirm the listing</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="method-box">
+                        <h4>Command Method</h4>
+                        <p>Hold item in main hand:</p>
+                        <ul>
+                            <li><code>/ah sell 1000</code> - List for 1000G (auction only)</li>
+                            <li><code>/ah sell 1000 5000</code> - List with 5000G buyout</li>
+                        </ul>
+                    </div>
+
+                    <h3>💰 Fees & Restrictions</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>Fee Structure</h4>
+                            <ul>
+                                <li><strong>Listing Fee:</strong> 5% (min 10G, max 1000G)</li>
+                                <li><strong>Sales Tax:</strong> 3% of final price</li>
+                                <li><strong>Duration:</strong> 228 hours (9.5 days)</li>
+                            </ul>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Restrictions</h4>
+                            <ul>
+                                <li>Max 7 items listed per player</li>
+                                <li>Items must be 1 or full stack</li>
+                                <li>No damaged items</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3>🏆 Bidding System</h3>
+                    <div class="method-box">
+                        <ul>
+                            <li>Left-click item to view details</li>
+                            <li>Right-click to place bid</li>
+                            <li>Minimum increment: 10% of current price</li>
+                            <li>Money deducted immediately</li>
+                            <li>Refunded if outbid via mailbox</li>
+                        </ul>
+                    </div>
+
+                    <h3>📬 Mailbox System</h3>
+                    <div class="feature-card">
+                        <p>Access with <code>/auction mail</code></p>
+                        <ul>
+                            <li>🟢 Green wool - Ready to collect</li>
+                            <li>🔴 Red wool - Need inventory space</li>
+                            <li>Max 50 mails per player</li>
+                            <li>Auto-deleted after 30 days</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Admin Guide Section -->
+                <section id="admin-guide" class="section">
+                    <h2>🛠️ Administrator Guide</h2>
+                    
+                    <h3>🌐 Cloud Integration</h3>
+                    <div class="feature-card">
+                        <h4>Best Auction Cloud</h4>
+                        <p>Web interface for viewing auctions across servers</p>
+                        <p><strong>URL:</strong> <a href="https://best-auction-cloud.masafumi-t.workers.dev/" target="_blank">https://best-auction-cloud.masafumi-t.workers.dev/</a></p>
+                    </div>
+
+                    <h3>⚙️ Setup Steps</h3>
+                    <div class="method-box">
+                        <h4>1. Get API Token</h4>
+                        <ol>
+                            <li>Run <code>/auction cloud gettoken</code></li>
+                            <li>Visit the provided URL</li>
+                            <li>Create account and copy token</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="method-box">
+                        <h4>2. Configure Server</h4>
+                        <pre><code>/auction cloud settoken YOUR_TOKEN</code></pre>
+                        <p>Or edit config.yml:</p>
+                        <pre><code>cloud:
+  enabled: true
+  api_token: "YOUR_TOKEN"
+  server_id: "server-name"</code></pre>
+                    </div>
+                    
+                    <div class="method-box">
+                        <h4>3. Verify & Sync</h4>
+                        <ul>
+                            <li><code>/auction cloud validate</code> - Check token</li>
+                            <li><code>/auction cloud status</code> - View status</li>
+                            <li><code>/auction cloud sync</code> - Manual sync</li>
+                        </ul>
+                    </div>
+
+                    <h3>🔧 Admin Commands</h3>
+                    <div class="command-grid">
+                        <div class="command-card">
+                            <h4>Cloud Status</h4>
+                            <code>/auction cloud status</code>
+                            <p>Show connection status</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>Force Sync</h4>
+                            <code>/auction cloud sync force</code>
+                            <p>Full data resync</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>Dashboard</h4>
+                            <code>/auction cloud dashboard</code>
+                            <p>Get web dashboard URL</p>
+                        </div>
+                    </div>
+
+                    <h3>📊 Configuration</h3>
+                    <div class="method-box">
+                        <h4>Key Settings</h4>
+                        <pre><code>auction:
+  default_duration: 228        # Hours
+  listing_fee_rate: 0.05      # 5%
+  tax_rate: 0.03              # 3%
+  max_player_listings: 7      # Per player
+  
+cloud:
+  batch_size: 50              # Items per sync
+  batch_delay: 1000           # Milliseconds</code></pre>
+                    </div>
+
+                    <h3>🛡️ Privacy & Security</h3>
+                    <div class="warning-box">
+                        <h4>Data Shared with Cloud</h4>
+                        <ul>
+                            <li>✅ Item names, prices, seller names</li>
+                            <li>✅ Auction timestamps</li>
+                            <li>❌ Player UUIDs (anonymized)</li>
+                            <li>❌ IP addresses</li>
+                            <li>❌ Server configuration</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Japanese Content -->
+            <div id="content-ja" class="content" style="display: none;">
+                <!-- 概要セクション -->
+                <section id="overview-ja" class="section">
+                    <h2>🌟 概要</h2>
+                    <div class="hero-section">
+                        <div class="hero-box">
+                            <h3>Best Auctionへようこそ</h3>
+                            <p>Minecraftサーバー用の包括的なオークションハウスプラグイン</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h3>🎮 プレイヤー向け</h3>
+                            <ul>
+                                <li>アイテムをオークションまたは即売で出品</li>
+                                <li>他のプレイヤーのアイテムに入札</li>
+                                <li>カテゴリで検索・フィルター</li>
+                                <li>メールボックスシステムでアイテム受取</li>
+                            </ul>
+                        </div>
+                        <div class="feature-card">
+                            <h3>🛠️ 管理者向け</h3>
+                            <ul>
+                                <li>Webインターフェース用クラウド統合</li>
+                                <li>詳細な設定オプション</li>
+                                <li>パフォーマンス監視</li>
+                                <li>マルチサーバー対応</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ユーザーガイドセクション -->
+                <section id="user-guide-ja" class="section">
+                    <h2>📚 ユーザーガイド</h2>
+                    
+                    <h3>📜 基本コマンド</h3>
+                    <div class="command-grid">
+                        <div class="command-card">
+                            <h4>オークションハウスを開く</h4>
+                            <code>/auction</code> または <code>/ah</code>
+                            <p>メインオークションハウスGUIを開く</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>アイテム出品</h4>
+                            <code>/auction sell &lt;価格&gt; [即決価格]</code>
+                            <p>手持ちアイテムを出品</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>入札</h4>
+                            <code>/auction bid &lt;ID&gt; &lt;金額&gt;</code>
+                            <p>オークションアイテムに入札</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>出品キャンセル</h4>
+                            <code>/auction cancel &lt;ID&gt;</code>
+                            <p>あなたの出品をキャンセル</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>メールボックス</h4>
+                            <code>/auction mail</code>
+                            <p>アイテムと返金を受取</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>アイテム検索</h4>
+                            <code>/auction search &lt;キーワード&gt;</code>
+                            <p>特定アイテムを検索</p>
+                        </div>
+                    </div>
+
+                    <h3>📤 アイテムの出品方法</h3>
+                    <div class="method-box">
+                        <h4>GUI方式</h4>
+                        <ol>
+                            <li><code>/ah</code>でオークションハウスを開く</li>
+                            <li>下部中央のエメラルドブロックをクリック</li>
+                            <li>空きスロットにアイテムを配置</li>
+                            <li>チャットで開始価格を入力</li>
+                            <li>オプションで即決価格を入力</li>
+                            <li>出品を確認</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="method-box">
+                        <h4>コマンド方式</h4>
+                        <p>メインハンドにアイテムを持って：</p>
+                        <ul>
+                            <li><code>/ah sell 1000</code> - 1000Gで出品（オークションのみ）</li>
+                            <li><code>/ah sell 1000 5000</code> - 5000G即決付き</li>
+                        </ul>
+                    </div>
+
+                    <h3>💰 手数料と制限</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>手数料体系</h4>
+                            <ul>
+                                <li><strong>出品手数料：</strong> 5%（最小10G、最大1000G）</li>
+                                <li><strong>売却税：</strong> 最終価格の3%</li>
+                                <li><strong>期間：</strong> 228時間（9.5日）</li>
+                            </ul>
+                        </div>
+                        <div class="feature-card">
+                            <h4>制限事項</h4>
+                            <ul>
+                                <li>プレイヤー毎最大7アイテム</li>
+                                <li>1個またはフルスタックのみ</li>
+                                <li>ダメージ品は不可</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h3>🏆 入札システム</h3>
+                    <div class="method-box">
+                        <ul>
+                            <li>アイテムを左クリックで詳細表示</li>
+                            <li>右クリックで入札</li>
+                            <li>最小増分：現在価格の10%</li>
+                            <li>即座に引き落とし</li>
+                            <li>負けた場合メールボックスで返金</li>
+                        </ul>
+                    </div>
+
+                    <h3>📬 メールボックスシステム</h3>
+                    <div class="feature-card">
+                        <p><code>/auction mail</code>でアクセス</p>
+                        <ul>
+                            <li>🟢 緑の羊毛 - 受取可能</li>
+                            <li>🔴 赤の羊毛 - インベントリ空き必要</li>
+                            <li>プレイヤー毎最大50通</li>
+                            <li>30日後に自動削除</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- 管理者ガイドセクション -->
+                <section id="admin-guide-ja" class="section">
+                    <h2>🛠️ 管理者ガイド</h2>
+                    
+                    <h3>🌐 クラウド統合</h3>
+                    <div class="feature-card">
+                        <h4>Best Auction Cloud</h4>
+                        <p>複数サーバーのオークションを表示するWebインターフェース</p>
+                        <p><strong>URL：</strong> <a href="https://best-auction-cloud.masafumi-t.workers.dev/" target="_blank">https://best-auction-cloud.masafumi-t.workers.dev/</a></p>
+                    </div>
+
+                    <h3>⚙️ セットアップ手順</h3>
+                    <div class="method-box">
+                        <h4>1. APIトークン取得</h4>
+                        <ol>
+                            <li><code>/auction cloud gettoken</code>を実行</li>
+                            <li>提供されたURLにアクセス</li>
+                            <li>アカウント作成しトークンをコピー</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="method-box">
+                        <h4>2. サーバー設定</h4>
+                        <pre><code>/auction cloud settoken あなたのトークン</code></pre>
+                        <p>またはconfig.ymlを編集：</p>
+                        <pre><code>cloud:
+  enabled: true
+  api_token: "あなたのトークン"
+  server_id: "サーバー名"</code></pre>
+                    </div>
+                    
+                    <div class="method-box">
+                        <h4>3. 確認と同期</h4>
+                        <ul>
+                            <li><code>/auction cloud validate</code> - トークン確認</li>
+                            <li><code>/auction cloud status</code> - ステータス表示</li>
+                            <li><code>/auction cloud sync</code> - 手動同期</li>
+                        </ul>
+                    </div>
+
+                    <h3>🔧 管理コマンド</h3>
+                    <div class="command-grid">
+                        <div class="command-card">
+                            <h4>クラウドステータス</h4>
+                            <code>/auction cloud status</code>
+                            <p>接続状態を表示</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>強制同期</h4>
+                            <code>/auction cloud sync force</code>
+                            <p>完全データ再同期</p>
+                        </div>
+                        <div class="command-card">
+                            <h4>ダッシュボード</h4>
+                            <code>/auction cloud dashboard</code>
+                            <p>WebダッシュボードURL取得</p>
+                        </div>
+                    </div>
+
+                    <h3>📊 設定</h3>
+                    <div class="method-box">
+                        <h4>主要設定</h4>
+                        <pre><code>auction:
+  default_duration: 228        # 時間
+  listing_fee_rate: 0.05      # 5%
+  tax_rate: 0.03              # 3%
+  max_player_listings: 7      # プレイヤー毎
+  
+cloud:
+  batch_size: 50              # 同期毎のアイテム数
+  batch_delay: 1000           # ミリ秒</code></pre>
+                    </div>
+
+                    <h3>🛡️ プライバシーとセキュリティ</h3>
+                    <div class="warning-box">
+                        <h4>クラウドと共有されるデータ</h4>
+                        <ul>
+                            <li>✅ アイテム名、価格、出品者名</li>
+                            <li>✅ オークションタイムスタンプ</li>
+                            <li>❌ プレイヤーUUID（匿名化）</li>
+                            <li>❌ IPアドレス</li>
+                            <li>❌ サーバー設定</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function switchLanguage(lang) {
+            const enContent = document.getElementById('content-en');
+            const jaContent = document.getElementById('content-ja');
+            const enBtn = document.getElementById('en-btn');
+            const jaBtn = document.getElementById('ja-btn');
+            const subtitle = document.getElementById('subtitle-text');
+            
+            // Navigation link text
+            const overviewLink = document.getElementById('overview-link');
+            const userLink = document.getElementById('user-link');
+            const adminLink = document.getElementById('admin-link');
+            
+            if (lang === 'en') {
+                enContent.style.display = 'block';
+                jaContent.style.display = 'none';
+                enBtn.classList.add('active');
+                jaBtn.classList.remove('active');
+                subtitle.textContent = 'Complete Documentation';
+                overviewLink.textContent = 'Overview';
+                userLink.textContent = 'User Guide';
+                adminLink.textContent = 'Admin Guide';
+                document.documentElement.lang = 'en';
+            } else {
+                enContent.style.display = 'none';
+                jaContent.style.display = 'block';
+                enBtn.classList.remove('active');
+                jaBtn.classList.add('active');
+                subtitle.textContent = '完全ドキュメント';
+                overviewLink.textContent = '概要';
+                userLink.textContent = 'ユーザーガイド';
+                adminLink.textContent = '管理者ガイド';
+                document.documentElement.lang = 'ja';
+            }
+            
+            // Store language preference
+            localStorage.setItem('preferredLanguage', lang);
+        }
+        
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+                const currentLang = document.getElementById('content-ja').style.display === 'none' ? 'en' : 'ja';
+                
+                // Adjust target ID for Japanese content
+                let actualTargetId = targetId;
+                if (currentLang === 'ja' && !targetId.endsWith('-ja')) {
+                    actualTargetId = targetId + '-ja';
+                }
+                
+                const target = document.getElementById(actualTargetId);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Load preferred language or detect browser language
+        const savedLang = localStorage.getItem('preferredLanguage');
+        const browserLang = navigator.language.substring(0, 2);
+        
+        if (savedLang) {
+            switchLanguage(savedLang);
+        } else if (browserLang === 'ja') {
+            switchLanguage('ja');
+        }
+    </script>
+    
+    <style>
+        /* Additional styles for single-page layout */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        .nav-btn {
+            background: var(--ff-blue);
+            color: var(--ff-light);
+            border: 2px solid var(--ff-silver);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-btn:hover {
+            background: var(--ff-accent);
+            border-color: var(--ff-gold);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+        }
+        
+        section {
+            scroll-margin-top: 20px;
+        }
+        
+        section + section {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid var(--ff-gold);
+        }
+        
+        h3 {
+            color: var(--ff-gold);
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        pre {
+            background: rgba(15, 20, 25, 0.8);
+            border: 1px solid var(--ff-silver);
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        pre code {
+            color: var(--ff-silver);
+            background: transparent;
+            padding: 0;
+        }
+    </style>
+</body>
+</html>
