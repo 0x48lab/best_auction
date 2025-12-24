@@ -183,10 +183,10 @@ class AuctionUI : Listener {
                 lore.add("§7設定名: §f${originalMeta.displayName}")
             }
             lore.add("§7${plugin.langManager.getMessage(player, "ui.seller")}: §f${auctionItem.sellerName}")
-            lore.add("§7${plugin.langManager.getMessage(player, "ui.current_bid")}: §a${ItemUtils.formatPriceWithCurrency(auctionItem.currentPrice, plugin.getEconomy(), plugin)}")
+            lore.add("§7${plugin.langManager.getMessage(player, "ui.current_bid")}: §a${ItemUtils.formatPriceWithCurrency(auctionItem.currentPrice, plugin.getEconomyProvider(), plugin)}")
             
             if (auctionItem.buyoutPrice != null) {
-                lore.add("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.buyoutPrice, plugin.getEconomy(), plugin)}")
+                lore.add("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.buyoutPrice, plugin.getEconomyProvider(), plugin)}")
             }
             
             lore.add("§7数量: §f${auctionItem.quantity}")
@@ -260,11 +260,11 @@ class AuctionUI : Listener {
                 lore.add("§7設定名: §f${originalMeta.displayName}")
             }
             lore.add("§7${plugin.langManager.getMessage(player, "ui.seller")}: §f${auctionItem.sellerName}")
-            lore.add("§7${plugin.langManager.getMessage(player, "ui.current_bid")}: §a${ItemUtils.formatPriceWithCurrency(auctionItem.currentPrice, plugin.getEconomy(), plugin)}")
+            lore.add("§7${plugin.langManager.getMessage(player, "ui.current_bid")}: §a${ItemUtils.formatPriceWithCurrency(auctionItem.currentPrice, plugin.getEconomyProvider(), plugin)}")
             
             // Show player's bid amount
             if (auctionItem.playerBidAmount != null) {
-                lore.add("§7${plugin.langManager.getMessage(player, "ui.your_bid")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.playerBidAmount, plugin.getEconomy(), plugin)}")
+                lore.add("§7${plugin.langManager.getMessage(player, "ui.your_bid")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.playerBidAmount, plugin.getEconomyProvider(), plugin)}")
                 
                 // Show if player is winning or losing
                 if (auctionItem.playerBidAmount == auctionItem.currentPrice) {
@@ -275,7 +275,7 @@ class AuctionUI : Listener {
             }
             
             if (auctionItem.buyoutPrice != null) {
-                lore.add("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.buyoutPrice, plugin.getEconomy(), plugin)}")
+                lore.add("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §e${ItemUtils.formatPriceWithCurrency(auctionItem.buyoutPrice, plugin.getEconomyProvider(), plugin)}")
             }
             
             lore.add("§7数量: §f${auctionItem.quantity}")
@@ -504,7 +504,7 @@ class AuctionUI : Listener {
                 val buyoutPrice = auctionInfo.buyoutPrice
         
                 if (isRightClick && buyoutPrice != null) {
-                    player.sendMessage("§eBuyout price: ${ItemUtils.formatPriceWithCurrency(buyoutPrice, plugin.getEconomy(), plugin)}")
+                    player.sendMessage("§eBuyout price: ${ItemUtils.formatPriceWithCurrency(buyoutPrice, plugin.getEconomyProvider(), plugin)}")
                     player.sendMessage("§e'/ah confirm' コマンドで購入を実行してください。")
                     plugin.bidHandler.startBuyout(player, auctionId, buyoutPrice)
                     plugin.logger.info("Started buyout session for player ${player.name}, itemId: $auctionId, price: $buyoutPrice")
@@ -513,10 +513,10 @@ class AuctionUI : Listener {
                     
                     player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                     player.sendMessage("§6${plugin.langManager.getMessage(player, "ui.bid_prompt_header")}")
-                    player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_highest_bid")}: §a${ItemUtils.formatPriceWithCurrency(currentPrice, plugin.getEconomy(), plugin)}")
-                    player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.minimum_bid")}: §e${ItemUtils.formatPriceWithCurrency(currentPrice + 1, plugin.getEconomy(), plugin)}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_highest_bid")}: §a${ItemUtils.formatPriceWithCurrency(currentPrice, plugin.getEconomyProvider(), plugin)}")
+                    player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.minimum_bid")}: §e${ItemUtils.formatPriceWithCurrency(currentPrice + 1, plugin.getEconomyProvider(), plugin)}")
                     if (buyoutPrice != null) {
-                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §6${ItemUtils.formatPriceWithCurrency(buyoutPrice, plugin.getEconomy(), plugin)}")
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §6${ItemUtils.formatPriceWithCurrency(buyoutPrice, plugin.getEconomyProvider(), plugin)}")
                         player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.buyout_hint")}")
                     }
                     player.sendMessage("§7${plugin.langManager.getMessage(player, "time.remaining", timeRemaining)}")
@@ -690,11 +690,11 @@ class AuctionUI : Listener {
                         
                         player.sendMessage("§e━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                         player.sendMessage("§6${plugin.langManager.getMessage(player, "ui.change_bid_header")}")
-                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_highest_bid")}: §a${ItemUtils.formatPriceWithCurrency(currentPrice, plugin.getEconomy(), plugin)}")
-                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.your_current_bid")}: §e${ItemUtils.formatPriceWithCurrency(playerBidAmount, plugin.getEconomy(), plugin)}")
-                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.minimum_bid")}: §e${ItemUtils.formatPriceWithCurrency(currentPrice + 1, plugin.getEconomy(), plugin)}")
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.current_highest_bid")}: §a${ItemUtils.formatPriceWithCurrency(currentPrice, plugin.getEconomyProvider(), plugin)}")
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.your_current_bid")}: §e${ItemUtils.formatPriceWithCurrency(playerBidAmount, plugin.getEconomyProvider(), plugin)}")
+                        player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.minimum_bid")}: §e${ItemUtils.formatPriceWithCurrency(currentPrice + 1, plugin.getEconomyProvider(), plugin)}")
                         if (auctionInfo.buyoutPrice != null) {
-                            player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §6${ItemUtils.formatPriceWithCurrency(auctionInfo.buyoutPrice, plugin.getEconomy(), plugin)}")
+                            player.sendMessage("§7${plugin.langManager.getMessage(player, "ui.buyout_price")}: §6${ItemUtils.formatPriceWithCurrency(auctionInfo.buyoutPrice, plugin.getEconomyProvider(), plugin)}")
                             player.sendMessage("§8${plugin.langManager.getMessage(player, "ui.buyout_hint")}")
                         }
                         player.sendMessage("§7${plugin.langManager.getMessage(player, "time.remaining", timeRemaining)}")

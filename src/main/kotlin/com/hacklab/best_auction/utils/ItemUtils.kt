@@ -85,39 +85,49 @@ object ItemUtils {
         }
     }
     
-    fun formatPriceWithCurrency(price: Long, economy: net.milkbowl.vault.economy.Economy?, plugin: com.hacklab.best_auction.Main? = null): String {
+    fun formatPriceWithCurrency(price: Long, economy: com.hacklab.best_auction.economy.EconomyProvider?, plugin: com.hacklab.best_auction.Main? = null): String {
         return try {
             val formattedAmount = when {
                 price >= 1000000 -> String.format("%.2fM", price / 1000000.0)
                 price >= 1000 -> String.format("%.1fK", price / 1000.0)
                 else -> price.toString()
             }
-            
+
             // Get fallback currency from config
             val fallbackCurrency = plugin?.config?.getString("currency.fallback_currency") ?: "gil"
             val useVaultFormat = plugin?.config?.getBoolean("currency.use_vault_format") ?: true
             val currencySymbol = plugin?.config?.getString("currency.currency_symbol") ?: ""
-            
-            // If Vault is disabled in config or economy is null, use manual format
-            if (!useVaultFormat || economy == null) {
+
+            // If economy provider is null, use manual format
+            if (economy == null) {
                 return if (currencySymbol.isNotBlank()) {
                     "$currencySymbol$formattedAmount"
                 } else {
                     "$formattedAmount $fallbackCurrency"
                 }
             }
-            
-            // Try to get currency format from Vault
-            val vaultFormatted = economy.format(price.toDouble())
-            
-            // If Vault formatting fails or returns unexpected result, use fallback
-            if (vaultFormatted.isNullOrBlank() || !vaultFormatted.contains(price.toString())) {
-                val currencyName = economy.currencyNamePlural()?.takeIf { it.isNotBlank() } ?: fallbackCurrency
+
+            // If use_vault_format is false, use manual format with economy's currency name
+            if (!useVaultFormat) {
+                return if (currencySymbol.isNotBlank()) {
+                    "$currencySymbol$formattedAmount"
+                } else {
+                    val currencyName = economy.currencyNamePlural().takeIf { it.isNotBlank() } ?: fallbackCurrency
+                    "$formattedAmount $currencyName"
+                }
+            }
+
+            // Try to get currency format from economy provider
+            val economyFormatted = economy.format(price.toDouble())
+
+            // If formatting fails or returns unexpected result, use fallback
+            if (economyFormatted.isNullOrBlank() || !economyFormatted.contains(price.toString())) {
+                val currencyName = economy.currencyNamePlural().takeIf { it.isNotBlank() } ?: fallbackCurrency
                 return "$formattedAmount $currencyName"
             }
-            
+
             // Replace full amount with abbreviated amount but keep currency format
-            vaultFormatted.replace(price.toString(), formattedAmount)
+            economyFormatted.replace(price.toString(), formattedAmount)
         } catch (e: Exception) {
             // Ultimate fallback to default format if any error occurs
             val fallbackCurrency = plugin?.config?.getString("currency.fallback_currency") ?: "gil"

@@ -7,8 +7,8 @@ import com.hacklab.best_auction.data.AuctionItem
 import com.hacklab.best_auction.data.Bid
 import com.hacklab.best_auction.database.AuctionItems
 import com.hacklab.best_auction.database.Bids
+import com.hacklab.best_auction.economy.EconomyProvider
 import com.hacklab.best_auction.utils.ItemUtils
-import net.milkbowl.vault.economy.Economy
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.jetbrains.exposed.sql.*
@@ -18,7 +18,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class AuctionManager(private val plugin: Main, private val economy: Economy, private val cloudEventManager: CloudEventManager) {
+class AuctionManager(private val plugin: Main, private val economy: EconomyProvider, private val cloudEventManager: CloudEventManager) {
 
     fun listItem(player: Player, startPrice: Long, buyoutPrice: Long?): Boolean {
         val item = player.inventory.itemInMainHand
@@ -88,7 +88,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy, pri
                     it[AuctionItems.quantity] = item.amount
                 } get AuctionItems.id
                 
-                if (economy.withdrawPlayer(player, fee.toDouble()).transactionSuccess()) {
+                if (economy.withdrawPlayer(player, fee.toDouble())) {
                     player.inventory.setItemInMainHand(null)
                     player.sendMessage("§a${plugin.langManager.getMessage(player, "auction.item_listed", "${auctionId.value}")}")
                     player.sendMessage("§7${plugin.langManager.getMessage(player, "auction.listing_fee", "${ItemUtils.formatPriceWithCurrency(fee, economy, plugin)}")}")
@@ -201,7 +201,7 @@ class AuctionManager(private val plugin: Main, private val economy: Economy, pri
                 }
                 
                 // Withdraw new bid amount
-                if (!economy.withdrawPlayer(player, bidAmount.toDouble()).transactionSuccess()) {
+                if (!economy.withdrawPlayer(player, bidAmount.toDouble())) {
                     // If withdrawal fails, remove the bid we just added
                     Bids.deleteWhere { 
                         (Bids.auctionItem eq itemId) and 

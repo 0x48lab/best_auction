@@ -61,3 +61,13 @@ object CloudSyncStatus : IntIdTable("cloud_sync_status") {
     val errorMessage = text("error_message").nullable()
     val createdAt = datetime("created_at").default(LocalDateTime.now())
 }
+
+/**
+ * 内蔵経済システム用の残高テーブル
+ */
+object PlayerBalances : IntIdTable("player_balances") {
+    val playerUuid = varchar("player_uuid", 36).uniqueIndex()
+    val playerName = varchar("player_name", 16)
+    val balance = long("balance").default(0)
+    val updatedAt = datetime("updated_at").default(LocalDateTime.now())
+}

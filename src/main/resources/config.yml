@@ -39,14 +39,27 @@ auction:
   # Maximum number of items a player can list simultaneously
   max_player_listings: 7
 
+# Economy Settings
+economy:
+  # Economy provider type: "auto", "internal", "vault"
+  # - auto: Use Vault/VaultUnlocked if available, otherwise use internal
+  # - internal: Always use internal economy (stored in SQLite)
+  # - vault: Only use Vault/VaultUnlocked (fails if not available)
+  provider: "auto"
+
+  # Internal economy settings (used when provider is "internal" or "auto" fallback)
+  internal:
+    # Starting balance for new players
+    starting_balance: 1000
+
 # Currency Settings
 currency:
-  # Use Vault for currency formatting (recommended)
+  # Use Vault for currency formatting (recommended when using Vault)
   use_vault_format: true
-  
-  # Fallback currency name (used when Vault is unavailable)
+
+  # Fallback currency name (used when Vault is unavailable or internal economy)
   fallback_currency: "gil"
-  
+
   # Currency symbol (used when use_vault_format is false)
   currency_symbol: ""
 
