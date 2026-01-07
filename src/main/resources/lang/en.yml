@@ -226,3 +226,22 @@ cloud:
   dashboard_instruction: "Click the link above to view your auction statistics."
   dashboard_server_id: "Server ID: {0}"
   dashboard_url_not_configured: "Cloud base URL not configured!"
+
+# Economy Commands
+economy:
+  balance_self: "Your balance: {0}"
+  balance_other: "{0}'s balance: {1}"
+  pay_success: "Sent {1} to {0}!"
+  pay_received: "Received {1} from {0}!"
+  pay_not_enough: "You don't have enough money to send!"
+  pay_invalid_amount: "Amount must be a positive number!"
+  pay_self: "You cannot send money to yourself!"
+  eco_give_success: "Gave {1} to {0}."
+  eco_take_success: "Took {1} from {0}."
+  eco_set_success: "Set {0}'s balance to {1}."
+  eco_take_not_enough: "That player doesn't have enough money!"
+  eco_usage: "Usage: /auction eco <give|take|set> <player> <amount>"
+  internal_economy_only: "This command is only available with internal economy!"
+  help_balance: "- Check your balance"
+  help_pay: "- Send money to another player"
+  help_eco: "- Give/take/set money (admin only)"

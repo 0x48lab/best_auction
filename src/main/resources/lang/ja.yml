@@ -225,3 +225,22 @@ cloud:
   dashboard_instruction: "上記のリンクをクリックしてオークション統計を確認してください。"
   dashboard_server_id: "サーバーID: {0}"
   dashboard_url_not_configured: "クラウドベースURLが設定されていません！"
+
+# Economy Commands (経済コマンド)
+economy:
+  balance_self: "あなたの残高: {0}"
+  balance_other: "{0}の残高: {1}"
+  pay_success: "{0}に{1}を送金しました！"
+  pay_received: "{0}から{1}を受け取りました！"
+  pay_not_enough: "送金するお金が足りません！"
+  pay_invalid_amount: "送金金額は正の数値を入力してください！"
+  pay_self: "自分自身には送金できません！"
+  eco_give_success: "{0}に{1}を付与しました。"
+  eco_take_success: "{0}から{1}を徴収しました。"
+  eco_set_success: "{0}の残高を{1}に設定しました。"
+  eco_take_not_enough: "そのプレイヤーは十分なお金を持っていません！"
+  eco_usage: "使用方法: /auction eco <give|take|set> <プレイヤー> <金額>"
+  internal_economy_only: "このコマンドは内蔵経済システムでのみ使用できます！"
+  help_balance: "- 残高を確認"
+  help_pay: "- 他のプレイヤーにお金を送金"
+  help_eco: "- お金を付与/徴収/設定（管理者用）"

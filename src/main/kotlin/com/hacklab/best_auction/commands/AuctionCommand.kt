@@ -258,6 +258,185 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
                 generateTestData(sender, count)
             }
             
+            "balance", "bal", "money" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+
+                val economyProvider = plugin.getEconomyProvider()
+                if (economyProvider == null) {
+                    plugin.langManager.sendErrorMessage(sender, "general.no_economy")
+                    return true
+                }
+
+                val targetName = args.getOrNull(1)
+                if (targetName != null && sender.hasPermission("auction.admin")) {
+                    val target = plugin.server.getOfflinePlayer(targetName)
+                    if (target.hasPlayedBefore() || target.isOnline) {
+                        val balance = economyProvider.format(economyProvider.getBalance(target))
+                        sender.sendMessage(plugin.langManager.getMessage(sender, "economy.balance_other", target.name ?: targetName, balance))
+                    } else {
+                        plugin.langManager.sendErrorMessage(sender, "general.player_not_found")
+                    }
+                } else {
+                    val balance = economyProvider.format(economyProvider.getBalance(sender))
+                    sender.sendMessage(plugin.langManager.getMessage(sender, "economy.balance_self", balance))
+                }
+            }
+
+            "pay", "send" -> {
+                if (sender !is Player) {
+                    sender.sendMessage(plugin.langManager.getMessage("command.only_players"))
+                    return true
+                }
+
+                val economyProvider = plugin.getEconomyProvider()
+                if (economyProvider == null) {
+                    plugin.langManager.sendErrorMessage(sender, "general.no_economy")
+                    return true
+                }
+
+                if (args.size < 3) {
+                    plugin.langManager.sendErrorMessage(sender, "command.insufficient_args")
+                    return true
+                }
+
+                val targetName = args[1]
+                val amount = ItemUtils.parseAmount(args[2])
+
+                if (amount == null || amount <= 0) {
+                    plugin.langManager.sendErrorMessage(sender, "economy.pay_invalid_amount")
+                    return true
+                }
+
+                val target = plugin.server.getPlayer(targetName)
+                if (target == null) {
+                    plugin.langManager.sendErrorMessage(sender, "general.player_not_found")
+                    return true
+                }
+
+                if (target.uniqueId == sender.uniqueId) {
+                    plugin.langManager.sendErrorMessage(sender, "economy.pay_self")
+                    return true
+                }
+
+                if (!economyProvider.has(sender, amount.toDouble())) {
+                    plugin.langManager.sendErrorMessage(sender, "economy.pay_not_enough")
+                    return true
+                }
+
+                if (economyProvider.withdrawPlayer(sender, amount.toDouble()) &&
+                    economyProvider.depositPlayer(target, amount.toDouble())) {
+                    val formattedAmount = economyProvider.format(amount.toDouble())
+                    sender.sendMessage(plugin.langManager.getMessage(sender, "economy.pay_success", target.name, formattedAmount))
+                    target.sendMessage(plugin.langManager.getMessage(target, "economy.pay_received", sender.name, formattedAmount))
+                } else {
+                    plugin.langManager.sendErrorMessage(sender, "general.unknown_error")
+                }
+            }
+
+            "eco", "economy" -> {
+                if (!sender.hasPermission("auction.admin")) {
+                    if (sender is Player) {
+                        plugin.langManager.sendErrorMessage(sender, "command.no_permission")
+                    } else {
+                        sender.sendMessage(plugin.langManager.getMessage("command.no_permission"))
+                    }
+                    return true
+                }
+
+                val internalEconomy = plugin.getInternalEconomy()
+                if (internalEconomy == null) {
+                    if (sender is Player) {
+                        plugin.langManager.sendErrorMessage(sender, "economy.internal_economy_only")
+                    } else {
+                        sender.sendMessage(plugin.langManager.getMessage("economy.internal_economy_only"))
+                    }
+                    return true
+                }
+
+                if (args.size < 4) {
+                    if (sender is Player) {
+                        sender.sendMessage(plugin.langManager.getMessage(sender, "economy.eco_usage"))
+                    } else {
+                        sender.sendMessage(plugin.langManager.getMessage("economy.eco_usage"))
+                    }
+                    return true
+                }
+
+                val action = args[1].lowercase()
+                val targetName = args[2]
+                val amount = ItemUtils.parseAmount(args[3])
+
+                if (amount == null || amount <= 0) {
+                    if (sender is Player) {
+                        plugin.langManager.sendErrorMessage(sender, "economy.pay_invalid_amount")
+                    } else {
+                        sender.sendMessage(plugin.langManager.getMessage("economy.pay_invalid_amount"))
+                    }
+                    return true
+                }
+
+                val target = plugin.server.getOfflinePlayer(targetName)
+                if (!target.hasPlayedBefore() && !target.isOnline) {
+                    if (sender is Player) {
+                        plugin.langManager.sendErrorMessage(sender, "general.player_not_found")
+                    } else {
+                        sender.sendMessage(plugin.langManager.getMessage("general.player_not_found"))
+                    }
+                    return true
+                }
+
+                val formattedAmount = internalEconomy.format(amount.toDouble())
+                val displayName = target.name ?: targetName
+
+                when (action) {
+                    "give", "add" -> {
+                        internalEconomy.depositPlayer(target, amount.toDouble())
+                        val message = if (sender is Player) {
+                            plugin.langManager.getMessage(sender, "economy.eco_give_success", displayName, formattedAmount)
+                        } else {
+                            plugin.langManager.getMessage("economy.eco_give_success", displayName, formattedAmount)
+                        }
+                        sender.sendMessage(message)
+                    }
+                    "take", "remove" -> {
+                        if (!internalEconomy.has(target, amount.toDouble())) {
+                            if (sender is Player) {
+                                plugin.langManager.sendErrorMessage(sender, "economy.eco_take_not_enough")
+                            } else {
+                                sender.sendMessage(plugin.langManager.getMessage("economy.eco_take_not_enough"))
+                            }
+                            return true
+                        }
+                        internalEconomy.withdrawPlayer(target, amount.toDouble())
+                        val message = if (sender is Player) {
+                            plugin.langManager.getMessage(sender, "economy.eco_take_success", displayName, formattedAmount)
+                        } else {
+                            plugin.langManager.getMessage("economy.eco_take_success", displayName, formattedAmount)
+                        }
+                        sender.sendMessage(message)
+                    }
+                    "set" -> {
+                        internalEconomy.setBalance(target, amount)
+                        val message = if (sender is Player) {
+                            plugin.langManager.getMessage(sender, "economy.eco_set_success", displayName, formattedAmount)
+                        } else {
+                            plugin.langManager.getMessage("economy.eco_set_success", displayName, formattedAmount)
+                        }
+                        sender.sendMessage(message)
+                    }
+                    else -> {
+                        if (sender is Player) {
+                            sender.sendMessage(plugin.langManager.getMessage(sender, "economy.eco_usage"))
+                        } else {
+                            sender.sendMessage(plugin.langManager.getMessage("economy.eco_usage"))
+                        }
+                    }
+                }
+            }
+
             "help" -> {
                 if (sender !is Player) {
                     sendHelpMessageConsole(sender, label)
@@ -265,7 +444,7 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
                     sendHelpMessage(sender, label)
                 }
             }
-            
+
             else -> {
                 if (sender !is Player) {
                     sendHelpMessageConsole(sender, label)
@@ -280,25 +459,55 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
 
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<out String>): List<String>? {
         if (args.size == 1) {
-            val commands = mutableListOf("sell", "bid", "cancel", "search", "mail", "language", "confirm", "help")
+            val commands = mutableListOf("sell", "bid", "cancel", "search", "mail", "language", "confirm", "help", "balance", "pay")
             if (sender.hasPermission("auction.admin")) {
                 commands.add("cloud")
+                commands.add("eco")
                 if (plugin.config.getBoolean("debug.enable_debug_commands", false)) {
                     commands.add("testdata")
                 }
             }
             return commands.filter { it.startsWith(args[0].lowercase()) }
         }
-        
+
         if (args.size == 2 && args[0].lowercase() == "cloud") {
             val cloudCommands = listOf("sync", "status", "validate", "dashboard", "gettoken", "settoken")
             return cloudCommands.filter { it.startsWith(args[1].lowercase()) }
         }
-        
+
         if (args.size == 3 && args[0].lowercase() == "cloud" && args[1].lowercase() == "sync") {
             return listOf("force").filter { it.startsWith(args[2].lowercase()) }
         }
-        
+
+        // Economy command tab completion
+        if (args[0].lowercase() in listOf("pay", "send")) {
+            if (args.size == 2) {
+                return plugin.server.onlinePlayers
+                    .filter { it.name != sender.name }
+                    .map { it.name }
+                    .filter { it.lowercase().startsWith(args[1].lowercase()) }
+            }
+        }
+
+        if (args[0].lowercase() in listOf("eco", "economy") && sender.hasPermission("auction.admin")) {
+            if (args.size == 2) {
+                return listOf("give", "take", "set").filter { it.startsWith(args[1].lowercase()) }
+            }
+            if (args.size == 3) {
+                return plugin.server.onlinePlayers
+                    .map { it.name }
+                    .filter { it.lowercase().startsWith(args[2].lowercase()) }
+            }
+        }
+
+        if (args[0].lowercase() in listOf("balance", "bal", "money") && sender.hasPermission("auction.admin")) {
+            if (args.size == 2) {
+                return plugin.server.onlinePlayers
+                    .map { it.name }
+                    .filter { it.lowercase().startsWith(args[1].lowercase()) }
+            }
+        }
+
         return emptyList()
     }
 
@@ -312,8 +521,11 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
         player.sendMessage("§e/$label mail §7${plugin.langManager.getMessage(player, "command.help_mail")}")
         player.sendMessage("§e/$label confirm §7${plugin.langManager.getMessage(player, "command.help_confirm")}")
         player.sendMessage("§e/$label language §7- Change language settings")
+        player.sendMessage("§e/$label balance §7${plugin.langManager.getMessage(player, "economy.help_balance")}")
+        player.sendMessage("§e/$label pay <player> <amount> §7${plugin.langManager.getMessage(player, "economy.help_pay")}")
         player.sendMessage("§e/$label help §7${plugin.langManager.getMessage(player, "command.help_help")}")
         if (player.hasPermission("auction.admin")) {
+            player.sendMessage("§e/$label eco <give|take|set> <player> <amount> §7${plugin.langManager.getMessage(player, "economy.help_eco")}")
             player.sendMessage("§e/$label cloud §7- Cloud synchronization management")
             player.sendMessage("§e/$label testdata [count] §7- Generate test auction data")
         }
@@ -327,6 +539,7 @@ class AuctionCommand(private val plugin: Main) : CommandExecutor, TabCompleter {
         sender.sendMessage("§7  /$label cloud validate - Validate API token")
         sender.sendMessage("§7  /$label cloud gettoken - Get token URL")
         sender.sendMessage("§7  /$label cloud settoken <token> - Set API token")
+        sender.sendMessage("§e/$label eco <give|take|set> <player> <amount> §7- Manage player balance (internal economy)")
         sender.sendMessage("§e/$label help §7- Show this help message")
         sender.sendMessage("§7Note: Most auction commands require a player and cannot be used from console.")
     }

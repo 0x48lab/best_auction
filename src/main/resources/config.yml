@@ -52,6 +52,11 @@ economy:
     # Starting balance for new players
     starting_balance: 1000
 
+  # Register shortcut commands (/balance, /pay, /money)
+  # Only works when using internal economy (not with external economy plugins)
+  # Set to false if you have conflicts with other plugins
+  register_shortcut_commands: true
+
 # Currency Settings
 currency:
   # Use Vault for currency formatting (recommended when using Vault)

@@ -1,6 +1,7 @@
 package com.hacklab.best_auction
 
 import com.hacklab.best_auction.commands.AuctionCommand
+import com.hacklab.best_auction.commands.EconomyCommand
 import com.hacklab.best_auction.database.DatabaseManager
 import com.hacklab.best_auction.economy.EconomyProvider
 import com.hacklab.best_auction.economy.InternalEconomy
@@ -16,7 +17,9 @@ import com.hacklab.best_auction.tasks.ExpirationTask
 import com.hacklab.best_auction.ui.AuctionUI
 import com.hacklab.best_auction.utils.LangManager
 import net.milkbowl.vault.economy.Economy
+import org.bukkit.command.PluginCommand
 import org.bukkit.plugin.java.JavaPlugin
+import java.lang.reflect.Constructor
 
 class Main : JavaPlugin() {
 
@@ -52,6 +55,9 @@ class Main : JavaPlugin() {
             server.pluginManager.disablePlugin(this)
             return
         }
+
+        // Register shortcut economy commands if using internal economy
+        registerShortcutCommands()
 
         mailManager = MailManager(this)
         cloudEventManager = CloudEventManager(this)
@@ -164,5 +170,79 @@ class Main : JavaPlugin() {
      */
     fun getInternalEconomy(): InternalEconomy? {
         return economyProvider as? InternalEconomy
+    }
+
+    /**
+     * ショートカット経済コマンドを登録
+     * 内蔵経済使用時、かつ設定で有効な場合のみ登録
+     */
+    private fun registerShortcutCommands() {
+        // 内蔵経済を使用していない場合は登録しない
+        if (economyProvider !is InternalEconomy) {
+            logger.info("External economy detected, skipping shortcut command registration")
+            return
+        }
+
+        // 設定で無効になっている場合は登録しない
+        if (!config.getBoolean("economy.register_shortcut_commands", true)) {
+            logger.info("Shortcut command registration disabled in config")
+            return
+        }
+
+        try {
+            val commandMap = server.commandMap
+
+            // /balance, /bal, /money コマンド
+            val balanceCommand = EconomyCommand(this, EconomyCommand.CommandType.BALANCE)
+            registerCommand("balance", balanceCommand, "Check your balance", listOf("bal", "money"))
+
+            // /pay コマンド
+            val payCommand = EconomyCommand(this, EconomyCommand.CommandType.PAY)
+            registerCommand("pay", payCommand, "Send money to another player", listOf("send"))
+
+            logger.info("Registered shortcut economy commands: /balance, /bal, /money, /pay, /send")
+        } catch (e: Exception) {
+            logger.warning("Failed to register shortcut economy commands: ${e.message}")
+        }
+    }
+
+    /**
+     * コマンドを動的に登録
+     */
+    private fun registerCommand(name: String, executor: EconomyCommand, description: String, aliases: List<String> = emptyList()) {
+        try {
+            val commandMap = server.commandMap
+
+            // PluginCommandのコンストラクタを取得（privateなのでリフレクション使用）
+            val constructor: Constructor<PluginCommand> = PluginCommand::class.java.getDeclaredConstructor(
+                String::class.java,
+                org.bukkit.plugin.Plugin::class.java
+            )
+            constructor.isAccessible = true
+
+            val command = constructor.newInstance(name, this)
+            command.description = description
+            command.setExecutor(executor)
+            command.tabCompleter = executor
+            command.aliases = aliases
+
+            // 既存のコマンドがある場合は登録をスキップ
+            val existingCommand = commandMap.getCommand(name)
+            if (existingCommand != null) {
+                val pluginName = if (existingCommand is PluginCommand) {
+                    existingCommand.plugin?.name ?: "unknown"
+                } else {
+                    "unknown"
+                }
+                if (existingCommand !is PluginCommand || existingCommand.plugin != this) {
+                    logger.info("Command /$name already registered by $pluginName, skipping")
+                    return
+                }
+            }
+
+            commandMap.register(this.name.lowercase(), command)
+        } catch (e: Exception) {
+            logger.warning("Failed to register command /$name: ${e.message}")
+        }
     }
 }
