@@ -5,6 +5,44 @@ All notable changes to the Best Auction Plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-01-07
+
+### ✨ Added
+
+#### 💰 Economy Commands
+- **Balance Command**: `/auction balance` - Check your current balance
+  - Admin can check other players: `/auction balance <player>`
+  - Aliases: `/auction bal`, `/auction money`
+- **Pay Command**: `/auction pay <player> <amount>` - Send money to another player
+  - Works with both internal and Vault economy
+  - Alias: `/auction send`
+- **Admin Economy Command**: `/auction eco <give|take|set> <player> <amount>`
+  - `give` - Add money to player's balance
+  - `take` - Remove money from player's balance
+  - `set` - Set player's balance to specific amount
+  - Internal economy only
+
+#### 🔧 Shortcut Commands (Internal Economy Only)
+- `/balance`, `/bal`, `/money` - Quick balance check
+- `/pay`, `/send` - Quick money transfer
+- Automatically registered when using internal economy
+- Skipped if external economy plugin detected (no conflicts)
+- Configurable via `economy.register_shortcut_commands` in config.yml
+
+#### 🌐 Paper 1.21.x Support
+- Updated API compatibility for Paper 1.21.x
+- Maintained backward compatibility with 1.20.x
+
+### 🔧 Changed
+- Internal economy system now registers shortcut commands dynamically
+- Improved economy provider detection and fallback logic
+
+### 📝 Configuration
+- Added `economy.register_shortcut_commands` option (default: true)
+  - Set to false to disable shortcut command registration
+
+---
+
 ## [1.0.0] - 2024-12-18
 
 ### 🎉 Initial Release
