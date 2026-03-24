@@ -38,48 +38,49 @@ class AuctionUI : Listener {
             val title = plugin.langManager.getMessage(player, "ui.auction_house")
             val inventory = Bukkit.createInventory(null, 54, "§6$title")
 
-            // === Row 1 (slots 0-5): カテゴリ選択ボタン（すべて含む6つ） ===
+            // === Row 1 (slots 0-5): カテゴリ選択ボタン ===
             AuctionCategory.values().forEachIndexed { index, cat ->
                 val item = createCategoryItem(cat, plugin, player)
                 inventory.setItem(index, item)
             }
 
-            // === Row 3 (slots 18-20): 個人メニュー ===
+            // === Row 6 (slots 45-53): 操作メニュー（最下段） ===
+            // Personal: slots 45-47
             val myListingsItem = ItemStack(Material.LECTERN)
             val myListingsMeta = myListingsItem.itemMeta!!
             myListingsMeta.setDisplayName("§e" + plugin.langManager.getMessage(player, "ui.your_auctions"))
             myListingsMeta.lore = listOf("§7" + plugin.langManager.getMessage(player, "ui.click_to_view_listings"))
             myListingsItem.itemMeta = myListingsMeta
-            inventory.setItem(18, myListingsItem)
+            inventory.setItem(45, myListingsItem)
 
             val myBidsItem = ItemStack(Material.GOLDEN_SWORD)
             val myBidsMeta = myBidsItem.itemMeta!!
             myBidsMeta.setDisplayName("§e" + plugin.langManager.getMessage(player, "ui.my_bids"))
             myBidsMeta.lore = listOf("§7" + plugin.langManager.getMessage(player, "ui.click_to_view_bids"))
             myBidsItem.itemMeta = myBidsMeta
-            inventory.setItem(19, myBidsItem)
+            inventory.setItem(46, myBidsItem)
 
             val mailItem = ItemStack(Material.ENDER_CHEST)
             val mailMeta = mailItem.itemMeta!!
             mailMeta.setDisplayName("§e" + plugin.langManager.getMessage(player, "ui.mailbox"))
             mailMeta.lore = listOf("§7" + plugin.langManager.getMessage(player, "ui.click_to_open_mail"))
             mailItem.itemMeta = mailMeta
-            inventory.setItem(20, mailItem)
+            inventory.setItem(47, mailItem)
 
-            // === Row 3 (slots 22-23): ユーティリティ ===
+            // Utility: slots 52-53
             val searchItem = ItemStack(Material.SPYGLASS)
             val searchMeta = searchItem.itemMeta!!
             searchMeta.setDisplayName("§e" + plugin.langManager.getMessage(player, "ui.search"))
             searchMeta.lore = listOf("§7" + plugin.langManager.getMessage(player, "ui.click_to_search"))
             searchItem.itemMeta = searchMeta
-            inventory.setItem(22, searchItem)
+            inventory.setItem(52, searchItem)
 
             val settingsItem = ItemStack(Material.WRITABLE_BOOK)
             val settingsMeta = settingsItem.itemMeta!!
             settingsMeta.setDisplayName("§e" + plugin.langManager.getMessage(player, "ui.settings"))
             settingsMeta.lore = listOf("§7" + plugin.langManager.getMessage(player, "ui.click_to_settings"))
             settingsItem.itemMeta = settingsMeta
-            inventory.setItem(23, settingsItem)
+            inventory.setItem(53, settingsItem)
 
             player.openInventory(inventory)
         }
@@ -386,23 +387,20 @@ class AuctionUI : Listener {
                     openCategoryUI(player, plugin, categories[slot])
                 }
             }
-            // Row 3: Personal - My Listings (slot 18)
-            18 -> openMyListingsUI(player, plugin)
-            // Row 3: Personal - My Bids (slot 19)
-            19 -> openMyBidsUI(player, plugin)
-            // Row 3: Personal - Mailbox (slot 20)
-            20 -> {
+            // Row 6: Personal
+            45 -> openMyListingsUI(player, plugin)
+            46 -> openMyBidsUI(player, plugin)
+            47 -> {
                 player.closeInventory()
                 plugin.mailManager.openMailBox(player)
             }
-            // Row 3: Utility - Search (slot 22)
-            22 -> {
+            // Row 6: Utility
+            52 -> {
                 player.closeInventory()
                 plugin.langManager.sendInfoMessage(player, "ui.type_search_term")
                 plugin.searchHandler.startSearch(player)
             }
-            // Row 3: Utility - Settings (slot 23)
-            23 -> {
+            53 -> {
                 player.closeInventory()
                 LanguageSettingsUI.openLanguageSettings(player, plugin)
             }
