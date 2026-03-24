@@ -408,12 +408,18 @@ class AuctionUI : Listener {
         val myBidsTitle = plugin.langManager.getMessage(player, "ui.my_bids")
         val mailboxTitle = plugin.langManager.getMessage(player, "ui.mailbox")
 
+        // Check if title matches a category page
+        val isCategoryPage = AuctionCategory.values()
+            .filter { it != AuctionCategory.ALL }
+            .any { title.contains(getCategoryDisplayName(it, plugin, player)) }
+
         val isAuctionUI = title.contains(auctionHouseTitle) ||
                          title.startsWith(SEARCH_TITLE) ||
                          title.contains(searchResultsTitle) ||
                          title.contains(yourAuctionsTitle) ||
                          title.contains(myBidsTitle) ||
-                         title.contains(mailboxTitle)
+                         title.contains(mailboxTitle) ||
+                         isCategoryPage
 
         if (!isAuctionUI) return
 
@@ -422,6 +428,7 @@ class AuctionUI : Listener {
         val clickedItem = event.currentItem ?: return
 
         when {
+            isCategoryPage -> handleSubPageClick(player, event.rawSlot, clickedItem, plugin, event.isRightClick)
             title.contains(auctionHouseTitle) -> handleMainMenuClick(player, event.rawSlot, clickedItem, plugin, event.isRightClick)
             title.startsWith(SEARCH_TITLE) || title.contains(searchResultsTitle) -> handleSubPageClick(player, event.rawSlot, clickedItem, plugin, event.isRightClick)
             title.contains(yourAuctionsTitle) -> handleSubPageClick(player, event.rawSlot, clickedItem, plugin, event.isRightClick, isMyListings = true)
