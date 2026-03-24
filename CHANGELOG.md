@@ -5,6 +5,35 @@ All notable changes to the Best Auction Plugin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-24
+
+### ✨ Added
+
+#### 🏪 Simplified Auction Categories
+- Reduced categories from 10 to 6 for better usability
+  - **All** - All items sorted by newest first
+  - **Blocks** - Building blocks and decorations
+  - **Food** - Food and drinks
+  - **Weapons & Equipment** - Weapons, armor, and tools (non-enchanted)
+  - **Enchantments** - All enchanted items (books, weapons, armor, tools)
+  - **Others** - Redstone, transportation, brewing, and miscellaneous items
+
+#### 🎨 UI Redesign
+- Main screen redesigned as a category selection menu
+  - Top row: 6 category buttons for quick navigation
+  - Bottom row: Personal menu (listings, bids, mail) and utility buttons (search, settings)
+- Category pages are now separate screens with back button navigation
+- Items sorted by newest first (created date descending) across all views
+
+### 🔧 Changed
+- Enchanted items are now categorized by enchantment status rather than item type
+  - Enchanted sword → Enchantments (not Weapons & Equipment)
+  - Non-enchanted sword → Weapons & Equipment
+- Click detection changed from Material-based to slot-based for reliability
+- Backward compatibility maintained for existing database entries with legacy category names
+
+---
+
 ## [1.1.0] - 2025-01-07
 
 ### ✨ Added
@@ -158,6 +187,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## Version History
+
+### Version 1.2.0
+- **Release Date**: March 24, 2026
+- **Status**: Latest Release
+- **Compatibility**: Minecraft 1.20.1+, Paper/Spigot
+- **Major Features**: Simplified 6-category system, UI redesign, enchantment-based categorization
+
+### Version 1.1.0
+- **Release Date**: January 7, 2025
+- **Status**: Stable
+- **Compatibility**: Minecraft 1.20.1+, Paper/Spigot
+- **Major Features**: Economy commands (balance/pay/eco), Paper 1.21.x support
 
 ### Version 1.0.0
 - **Release Date**: December 18, 2024
