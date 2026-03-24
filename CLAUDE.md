@@ -102,3 +102,10 @@ Best Auctionは、Minecraft Paper/Spigotサーバー用のオークションハ�
 5. **デバッグメッセージの例外**
    - ログ出力（`plugin.logger`）は英語でOK
    - ただし、ユーザーに表示されるものは多言語対応必須
+
+## Active Technologies
+- Kotlin 1.9.24 + PaperMC API 1.21.4, Jetbrains Exposed ORM 0.44.1, Vault API (001-simplify-auction-categories)
+- SQLite (Exposed ORM経由) (001-simplify-auction-categories)
+
+## Recent Changes
+- 001-simplify-auction-categories: Added Kotlin 1.9.24 + PaperMC API 1.21.4, Jetbrains Exposed ORM 0.44.1, Vault API
