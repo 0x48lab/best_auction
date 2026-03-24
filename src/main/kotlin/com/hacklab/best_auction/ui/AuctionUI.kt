@@ -34,23 +34,23 @@ class AuctionUI : Listener {
             MAIN, SEARCH, MY_LISTINGS
         }
 
-        fun openMainUI(player: Player, plugin: Main, category: AuctionCategory = AuctionCategory.ALL, page: Int = 0) {
-            val categoryDisplayName = getCategoryDisplayName(category, plugin, player)
-            val title = "${plugin.langManager.getMessage(player, "ui.auction_house")} - $categoryDisplayName"
+        fun openMainUI(player: Player, plugin: Main, page: Int = 0) {
+            val title = plugin.langManager.getMessage(player, "ui.auction_house")
             val inventory = Bukkit.createInventory(null, 54, "§6$title")
-            val items = plugin.auctionManager.getActiveListings(category)
+            val items = plugin.auctionManager.getActiveListings(AuctionCategory.ALL)
 
             // Store session data
             playerPages[player.name] = page
-            playerSessions[player.name] = PaginationSession(SessionType.MAIN, category)
+            playerSessions[player.name] = PaginationSession(SessionType.MAIN, AuctionCategory.ALL)
 
-            // === Row 1 (slots 0-8): カテゴリフィルタ ===
-            AuctionCategory.values().forEachIndexed { index, cat ->
-                val item = createCategoryFilterItem(cat, plugin, player, cat == category)
+            // === Row 1 (slots 0-5): カテゴリ選択ボタン（ALLは除く、メイン画面自体がALL） ===
+            val categories = AuctionCategory.values().filter { it != AuctionCategory.ALL }
+            categories.forEachIndexed { index, cat ->
+                val item = createCategoryItem(cat, plugin, player)
                 inventory.setItem(index, item)
             }
 
-            // === Row 2-5 (slots 9-44): アイテム一覧 ===
+            // === Row 2-5 (slots 9-44): 全アイテム一覧（新着順） ===
             val startIndex = page * ITEMS_PER_PAGE
             val endIndex = minOf(startIndex + ITEMS_PER_PAGE, items.size)
 
@@ -103,6 +103,29 @@ class AuctionUI : Listener {
             player.openInventory(inventory)
         }
 
+        fun openCategoryUI(player: Player, plugin: Main, category: AuctionCategory, page: Int = 0) {
+            val categoryDisplayName = getCategoryDisplayName(category, plugin, player)
+            val inventory = Bukkit.createInventory(null, 54, "§6$categoryDisplayName")
+            val items = plugin.auctionManager.getActiveListings(category)
+
+            // Store session data
+            playerPages[player.name] = page
+            playerSessions[player.name] = PaginationSession(SessionType.MAIN, category)
+
+            // Items in slots 0-35
+            val startIndex = page * ITEMS_PER_PAGE
+            val endIndex = minOf(startIndex + ITEMS_PER_PAGE, items.size)
+
+            items.subList(startIndex, endIndex).forEachIndexed { index, auctionItem ->
+                val displayItem = createAuctionDisplayItem(auctionItem, player, plugin)
+                inventory.setItem(index, displayItem)
+            }
+
+            addSubPageNavigationButtons(inventory, plugin, player, page, items.size)
+
+            player.openInventory(inventory)
+        }
+
         fun openSearchUI(player: Player, plugin: Main, searchTerm: String, page: Int = 0) {
             val searchTitle = plugin.langManager.getMessage(player, "ui.search_results")
             val inventory = Bukkit.createInventory(null, 54, "§6$searchTitle: $searchTerm")
@@ -126,18 +149,14 @@ class AuctionUI : Listener {
             player.openInventory(inventory)
         }
 
-        private fun createCategoryFilterItem(category: AuctionCategory, plugin: Main, player: Player, isSelected: Boolean): ItemStack {
+        private fun createCategoryItem(category: AuctionCategory, plugin: Main, player: Player): ItemStack {
             val item = ItemStack(category.material)
             val meta = item.itemMeta!!
-            val displayName = getCategoryDisplayName(category, plugin, player)
-            meta.setDisplayName(if (isSelected) "§a§l$displayName" else "§e$displayName")
+            meta.setDisplayName("§e${getCategoryDisplayName(category, plugin, player)}")
             meta.lore = listOf(
-                "§7" + plugin.langManager.getMessage(player, "ui.click_to_browse")
+                "§7" + plugin.langManager.getMessage(player, "ui.click_to_browse"),
+                "§7" + plugin.langManager.getMessage(player, "ui.category_items_available")
             )
-            if (isSelected) {
-                meta.addEnchant(org.bukkit.enchantments.Enchantment.LUCK_OF_THE_SEA, 1, true)
-                meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS)
-            }
             item.itemMeta = meta
             return item
         }
@@ -413,11 +432,11 @@ class AuctionUI : Listener {
 
     private fun handleMainMenuClick(player: Player, slot: Int, clickedItem: ItemStack, plugin: Main, isRightClick: Boolean) {
         when (slot) {
-            // Row 1: Category filters (slots 0-5)
-            in 0..5 -> {
-                val categories = AuctionCategory.values()
+            // Row 1: Category buttons (slots 0-4) → navigate to category page
+            in 0..4 -> {
+                val categories = AuctionCategory.values().filter { it != AuctionCategory.ALL }
                 if (slot < categories.size) {
-                    openMainUI(player, plugin, categories[slot])
+                    openCategoryUI(player, plugin, categories[slot])
                 }
             }
             // Row 2-5: Item area (slots 9-44)
@@ -460,7 +479,13 @@ class AuctionUI : Listener {
         }
 
         when (session.type) {
-            SessionType.MAIN -> openMainUI(player, plugin, session.category, newPage)
+            SessionType.MAIN -> {
+                if (session.category == AuctionCategory.ALL) {
+                    openMainUI(player, plugin, newPage)
+                } else {
+                    openCategoryUI(player, plugin, session.category, newPage)
+                }
+            }
             SessionType.SEARCH -> session.searchTerm?.let { openSearchUI(player, plugin, it, newPage) }
             SessionType.MY_LISTINGS -> openMyListingsUI(player, plugin, newPage)
         }
