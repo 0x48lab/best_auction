@@ -163,18 +163,12 @@ time:
 
 # Categories (カテゴリ)
 category:
-  all: "全て"
-  weapons: "戦闘"
-  armor: "防具"
-  tools: "ツール"
-  food: "食料"
-  blocks: "建築ブロック"
-  misc: "その他"
-  decorations: "装飾"
-  redstone: "レッドストーン"
-  transportation: "輸送"
-  brewing: "醸造"
-  enchanted_books: "エンチャント本"
+  all: "すべて"
+  blocks: "ブロック"
+  food: "食品"
+  weapons_equipment: "武器装備"
+  enchantments: "エンチャント"
+  others: "その他"
 
 # General (一般)
 general:

@@ -165,17 +165,11 @@ time:
 # Categories
 category:
   all: "All"
-  weapons: "Combat"
-  armor: "Armor" 
-  tools: "Tools"
+  blocks: "Blocks"
   food: "Food"
-  blocks: "Building Blocks"
-  misc: "Miscellaneous"
-  decorations: "Decorations"
-  redstone: "Redstone"
-  transportation: "Transportation"
-  brewing: "Brewing"
-  enchanted_books: "Enchanted Books"
+  weapons_equipment: "Weapons & Equipment"
+  enchantments: "Enchantments"
+  others: "Others"
 
 # General
 general:

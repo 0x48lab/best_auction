@@ -274,15 +274,16 @@ class AuctionManager(private val plugin: Main, private val economy: EconomyProvi
         }
     }
     
-    fun getActiveListings(category: String? = null, searchTerm: String? = null): List<AuctionItem> {
+    fun getActiveListings(category: AuctionCategory? = null, searchTerm: String? = null): List<AuctionItem> {
         return transaction {
             var query = AuctionItems.select { AuctionItems.isActive and not(AuctionItems.isSold) }
-            
-            if (category != null) {
-                query = query.andWhere { AuctionItems.category eq category }
+
+            if (category != null && category != AuctionCategory.ALL) {
+                val dbNames = AuctionCategory.categoryDbNames[category] ?: listOf(category.name)
+                query = query.andWhere { AuctionItems.category inList dbNames }
             }
-            
-            query.orderBy(AuctionItems.currentPrice to SortOrder.ASC, AuctionItems.createdAt to SortOrder.ASC)
+
+            query.orderBy(AuctionItems.createdAt to SortOrder.DESC)
                 .mapNotNull { row ->
                     val item = ItemUtils.deserializeItemStack(row[AuctionItems.itemData])
                     if (item != null) {
